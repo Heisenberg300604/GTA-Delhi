@@ -22,6 +22,8 @@ export interface Drivable {
   readonly halfLength: number;
   /** False while story-locked (e.g. the family car after it's seized in M1). */
   readonly available: boolean;
+  /** Visible and solid but can't be entered (story lock). */
+  locked: boolean;
   teleport(pos: THREE.Vector3, heading: number): void;
   setAvailable(available: boolean): void;
   fixedUpdate(dt: number, input: Input | null): void;

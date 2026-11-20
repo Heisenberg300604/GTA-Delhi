@@ -9,6 +9,9 @@ import { dampAngle } from '../utils/math';
 
 export class MissionAborted extends Error {}
 
+/** Thrown into a stage when ctx.fail() is called; the manager retries from the checkpoint. */
+export class MissionFailed extends Error {}
+
 type XZ = { x: number; z: number };
 type V3 = [number, number, number];
 
@@ -30,6 +33,8 @@ export class MissionContext {
   skipping = false;
   inCutscene = false;
   vars: Record<string, unknown>;
+  /** Per-attempt scratch state (props spawned etc.); cleared on cleanup, never saved. */
+  scratch: Record<string, unknown> = {};
 
   private waiters: Waiter[] = [];
   private tickers = new Set<(dt: number) => void>();
@@ -37,6 +42,8 @@ export class MissionContext {
   private props: THREE.Object3D[] = [];
   private skipHold = 0;
   private aborted = false;
+  private failure: string | null = null;
+  private disposers: (() => void)[] = [];
 
   constructor(readonly host: StoryHost, vars: Record<string, unknown> = {}) {
     this.vars = vars;
@@ -53,6 +60,12 @@ export class MissionContext {
     this.time += dt;
     for (const t of this.tickers) t(dt);
     for (const a of this.actors) a.update(dt, (a.root.userData.speed as number) ?? 0);
+    if (this.failure !== null) {
+      const all = this.waiters;
+      this.waiters = [];
+      for (const w of all) w.reject(new MissionFailed(this.failure));
+      return;
+    }
     const ready = this.waiters.filter((w) => this.aborted || w.pred());
     this.waiters = this.waiters.filter((w) => !ready.includes(w));
     for (const w of ready) {
@@ -63,6 +76,37 @@ export class MissionContext {
 
   abort() {
     this.aborted = true;
+  }
+
+  /** Fail the mission (can be called from anywhere, e.g. inside an every() ticker). */
+  fail(reason: string) {
+    if (this.failure === null) this.failure = reason;
+  }
+
+  clearFailure() {
+    this.failure = null;
+  }
+
+  /** Register cleanup work (unsubscribe, remove collider...). */
+  onCleanup(fn: () => void) {
+    this.disposers.push(fn);
+  }
+
+  /** Temporary barricade with a collider; removed when the attempt ends. */
+  barrier(x: number, z: number, length: number, yaw = 0) {
+    this.onCleanup(this.host.spawnBarrier(x, z, length, yaw));
+  }
+
+  /** Any temporary scene object. */
+  prop<T extends THREE.Object3D>(o: T): T {
+    this.host.scene.add(o);
+    this.props.push(o);
+    return o;
+  }
+
+  /** Called when the player drives through a red light (until cleanup). */
+  onRedLight(fn: () => void) {
+    this.onCleanup(this.host.signals.onRunRed(fn));
   }
 
   // ------------------------------------------------------------ timing
@@ -254,6 +298,11 @@ export class MissionContext {
     this.actors = [];
     this.props = [];
     this.tickers.clear();
+    for (const d of this.disposers) d();
+    this.disposers = [];
+    this.scratch = {};
+    this.skipping = false;
+    this.inCutscene = false;
     const h = this.host;
     h.marker.hide();
     h.hud.setObjective(null);

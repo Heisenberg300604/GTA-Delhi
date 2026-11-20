@@ -6,20 +6,20 @@ export class Marker {
   private chevron: THREE.Mesh;
   private t = 0;
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Scene, color = '#f5c518') {
     const beam = new THREE.Mesh(
       new THREE.CylinderGeometry(0.9, 0.9, 30, 20, 1, true),
-      new THREE.MeshBasicMaterial({ color: '#f5c518', transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide, fog: false }),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide, fog: false }),
     );
     beam.position.y = 15;
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.75, 1.0, 32).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: '#f5c518', transparent: true, opacity: 0.85, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false }),
     );
     ring.position.y = 0.2;
     this.chevron = new THREE.Mesh(
       new THREE.ConeGeometry(0.35, 0.6, 4).rotateX(Math.PI),
-      new THREE.MeshBasicMaterial({ color: '#ffd84d' }),
+      new THREE.MeshBasicMaterial({ color }),
     );
     this.root.add(beam, ring, this.chevron);
     this.root.visible = false;

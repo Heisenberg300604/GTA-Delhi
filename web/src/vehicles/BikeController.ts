@@ -85,6 +85,7 @@ export class BikeController implements Drivable {
   }
 
   available = true;
+  locked = false;
 
   teleport(pos: THREE.Vector3, heading: number) {
     this.curr.set(pos.x, pos.y + GROUND_OFFSET, pos.z);

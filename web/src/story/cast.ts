@@ -19,6 +19,10 @@ export const CAST = {
   baker: { name: 'Sweety Aunty', color: '#f4acb7', palette: p('#c48b5f', '#2b1d14', '#f8bbd0', '#ffffff') },
   gogi: { name: 'Gogi', color: '#e76f51', palette: p('#7a4b2e', '#120d0a', '#ffffff', '#1f1f1f') },
   sheru: { name: 'Sheru', color: '#e76f51', palette: p('#5c3a24', '#120d0a', '#212121', '#2b3a55') },
+  lucky: { name: 'Lucky', color: '#ff9f1c', palette: p('#7a4b2e', '#120d0a', '#5d4037', '#1f1f1f') },
+  dhanpat: { name: 'Head Constable Dhanpat', color: '#c9b37e', palette: p('#6e4429', '#1c140f', '#b59a5b', '#a68b4f') },
+  constable: { name: 'Constable', color: '#c9b37e', palette: p('#8d5a3c', '#120c08', '#b59a5b', '#a68b4f') },
+  worker: { name: 'Worker', color: '#bdbdbd', palette: p('#5c3a24', '#120d0a', '#90a4ae', '#4e5b6e') },
   bittu: { name: 'Bittu', color: '#90be6d', palette: p('#8d5a3c', '#120c08', '#1e88e5', '#2b2b2b') },
 } satisfies Record<string, CastMember>;
 

@@ -46,9 +46,18 @@
 - [ ] Phone UI (contacts/messages screen): texts currently arrive as phone-style dialogue
 - [ ] Portraits for dialogue (2D illustrated faces)
 
-## Phase 5 — next up
-- [ ] M2 "Shareef Driving" (Lucky, law-abiding driving + suspicion meter, police checkpoint) — needs Majnu Ka Tila pocket
-- [ ] Traffic signals + police "challan" (Heat 1)
+## Phase 5 — Story & world systems (in progress)
+- [x] Map: Ring Road (6 lanes + median) along the north; Majnu Ka Tila colony north of it (white/maroon buildings, Tibetan signs, prayer flags)
+- [x] Ring Road Parking (Kothi lot: arch sign, booth, bays) and Bhalla Paper Traders godown (walled yard, shed)
+- [x] Traffic signals at the 10 big junctions (32 s cycle, all-red gap); AI stops on red; player red-light detection
+- [x] Traffic never enters dead-end lanes (keeps the colony lanes and the godown approach calm)
+- [x] Mission start triggers (orange beam + "L" minimap blip); M2 starts at the lot gate
+- [x] Mission failure → MISSION FAILED stamp → automatic retry from the stage checkpoint
+- [x] Locked vehicles (the seized car waits in Lucky's lot after M1)
+- [x] M2 "Shareef Driving": Lucky's first-impression choice, seatbelt (B), shareef meter (speeding, red lights, horn, crashes, pavement, wrong side), police naka with branching constable scene, ledgers in the boot, debt −₹50,000, car returned
+- [x] Automated M2 playthrough incl. failure/retry (`npm run test:m02`, 22 checks)
+- [ ] Free-roam police "challan" for red lights / speeding (Heat 1) using the same detectors
+- [ ] M3 "Nukkad" (North Campus play, find Rohit, foot chase, 3-way choice)
 - [ ] Melee combat (punch/kick damage, hit reactions) — needs Mixamo files from YOUR_TASKS.md
 
 ## Phase 5+

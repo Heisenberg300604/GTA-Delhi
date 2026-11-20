@@ -3,8 +3,9 @@ import { RAPIER, Physics } from '../physics/Physics';
 import { Rng } from '../utils/random';
 import { clamp, damp, lerpAngle } from '../utils/math';
 import {
-  ROADS, MAP_HALF, inCrossing, laneOffset, laneOffsets, roadHeading, roadPoint, type Road,
+  ROADS, MAP_HALF, inCrossing, laneOffset, laneOffsets, roadHeading, roadPoint, hasCrossingAhead, type Road,
 } from '../world/cityLayout';
+import type { TrafficSignals } from '../world/TrafficSignals';
 import { VEHICLE_TYPES, PARTS_PER_VEHICLE, type PartName, type VehicleType } from '../vehicles/vehicleTypes';
 
 /**
@@ -60,6 +61,8 @@ export class Traffic {
   private s = new THREE.Vector3();
   /** Called when an AI vehicle honks (x, z, isAtPlayer). */
   onHonk?: (x: number, z: number, atPlayer: boolean) => void;
+  /** Optional signals; when set, cars stop on red. */
+  signals: TrafficSignals | null = null;
 
   constructor(scene: THREE.Scene, private readonly physics: Physics, count: number, near: THREE.Vector3) {
     const geo = new THREE.BoxGeometry(1, 1, 1);
@@ -118,6 +121,7 @@ export class Traffic {
       const t = this.rng.float(-MAP_HALF + 20, MAP_HALF - 20);
       if (inCrossing(road, t, 4)) continue;
       const dir: 1 | -1 = this.rng.chance(0.5) ? 1 : -1;
+      if (!hasCrossingAhead(road, t, dir)) continue; // never spawn into a dead end
       const lane = this.rng.int(0, laneOffsets(road).length - 1);
       const offset = laneOffset(road, dir, lane);
       const p = roadPoint(road, t, offset);
@@ -223,13 +227,18 @@ export class Traffic {
 
       // --- junction logic (lane mode only)
       let stopGap = Infinity;
+      let stoppedBySignal = false;
       if (!car.turn) {
         const next = this.nextCrossing(car);
         if (next) {
           const stopT = next.center - car.dir * (next.width / 2 + 0.6);
           const dist = (stopT - car.t) * car.dir;
           if (next !== car.decidedFor) {
-            if (dist < 9 && car.wait < 4 && this.junctionBusy(car, next)) stopGap = dist;
+            const light = this.signals?.lightFor(car.road, next) ?? null;
+            if (light === 'red' || (light === 'yellow' && dist > 5)) {
+              stopGap = dist;
+              stoppedBySignal = true;
+            } else if (dist < 9 && car.wait < 4 && this.junctionBusy(car, next)) stopGap = dist;
             if (dist <= 0.4 && stopGap === Infinity) this.decide(car, next);
           }
         }
@@ -244,7 +253,7 @@ export class Traffic {
 
       if (car.speed < 0.4 && target < 0.5) {
         car.wait += dt;
-        const wantsHonk = blockedByPlayer ? car.wait > 0.8 : car.wait > 2.5 && this.rng.chance(dt * 0.6);
+        const wantsHonk = blockedByPlayer ? car.wait > 0.8 : !stoppedBySignal && car.wait > 2.5 && this.rng.chance(dt * 0.6);
         if (wantsHonk && car.honkCooldown <= 0) {
           car.honkCooldown = this.rng.float(1.4, 3.2);
           this.onHonk?.(car.x, car.z, blockedByPlayer);
@@ -252,6 +261,7 @@ export class Traffic {
       } else if (car.speed > 2) {
         car.wait = 0;
       }
+      if (stoppedBySignal) car.wait = Math.min(car.wait, 3);
 
       // --- move
       if (car.turn) this.advanceTurn(car, dt);
@@ -302,7 +312,7 @@ export class Traffic {
     const toLane = this.rng.int(0, laneOffsets(cross).length - 1);
     const toOffset = laneOffset(cross, toDir, toLane);
     const toT = car.road.center + toDir * (car.road.width / 2 + 0.6);
-    if (Math.abs(toT) > MAP_HALF - 15) return;
+    if (Math.abs(toT) > MAP_HALF - 15 || !hasCrossingAhead(cross, toT, toDir)) return; // no dead ends
     const a = roadPoint(car.road, car.t, car.offset);
     const corner = roadPoint(car.road, cross.center + toOffset, car.offset);
     const b = roadPoint(cross, toT, toOffset);

@@ -25,7 +25,9 @@ import { SaveManager } from '../save/SaveManager';
 import { MissionManager } from '../story/MissionManager';
 import type { StoryHost, Interaction } from '../story/StoryHost';
 import { CAST } from '../story/cast';
-import { MISSIONS } from '../story/missions/m01_birthday';
+import { MISSIONS } from '../story/missions';
+import { TrafficSignals } from '../world/TrafficSignals';
+import { RAPIER } from '../physics/Physics';
 
 /** Wires the systems together, owns the on-foot ↔ vehicle state machine and hosts the story. */
 export class Game implements GameLoop, StoryHost {
@@ -43,6 +45,8 @@ export class Game implements GameLoop, StoryHost {
   readonly bike: BikeController;
   readonly car: CarController;
   interaction: Interaction | null = null;
+  readonly signals: TrafficSignals;
+  private triggerMarker: Marker;
   readonly hasCharacterModels: boolean;
 
   private env: Environment;
@@ -56,6 +60,7 @@ export class Game implements GameLoop, StoryHost {
   private lastImpact = 0;
   private obstacles: Obstacle[] = [];
   private storyStarted = false;
+  private triggerLetter = '';
 
   private constructor(private readonly engine: Engine, private readonly physics: Physics, ui: HTMLElement, hasModel: boolean) {
     this.scene = engine.scene;
@@ -77,6 +82,9 @@ export class Game implements GameLoop, StoryHost {
     this.crowd = new Crowd(scene, physics, preset.pedestrians, this.player.position, preset.nearPedestrians);
     this.traffic = new Traffic(scene, physics, preset.traffic, this.player.position);
     this.marker = new Marker(scene);
+    this.triggerMarker = new Marker(scene, '#ff7043');
+    this.signals = new TrafficSignals(scene, physics);
+    this.traffic.signals = this.signals;
     this.spawnStoryNpcs();
 
     this.hud = new Hud(ui, () => this.beginPlay());
@@ -136,7 +144,11 @@ export class Game implements GameLoop, StoryHost {
   /** Persistent consequences of finished missions. */
   private applyWorldState() {
     const s = this.save.data;
-    this.car.setAvailable(!s.flags.carSeized);
+    if (s.flags.carSeized) {
+      // seized by the Kothi: parked, locked, in Ring Road Parking
+      this.car.teleport(new THREE.Vector3(LANDMARKS.lotCar.x, KERB, LANDMARKS.lotCar.z), LANDMARKS.lotCar.heading);
+      this.car.locked = true;
+    }
     this.hud.setDebt(s.debt, s.debtRevealed);
     this.hud.setWallet(s.money);
   }
@@ -153,6 +165,54 @@ export class Game implements GameLoop, StoryHost {
 
   forceExit() {
     if (this.current) this.exitVehicle(this.current, this.current.exitPoints()[0]);
+  }
+
+  enter(v: Drivable) {
+    if (this.current === v) return;
+    this.forceExit();
+    this.current = v;
+    this.player.setActive(false);
+    v.seat(this.player.rig);
+  }
+
+  spawnBarrier(x: number, z: number, length: number, yaw: number): () => void {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(length, 1.0, 0.45), Game.barrierMaterial());
+    mesh.position.set(x, KERB + 0.35, z);
+    mesh.rotation.y = yaw;
+    mesh.castShadow = true;
+    this.scene.add(mesh);
+    const collider = this.physics.world.createCollider(
+      RAPIER.ColliderDesc.cuboid(length / 2, 0.6, 0.25)
+        .setTranslation(x, 0.6, z)
+        .setRotation({ x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) }),
+    );
+    return () => {
+      mesh.removeFromParent();
+      this.physics.world.removeCollider(collider, false);
+    };
+  }
+
+  private static barrierMat: THREE.Material | null = null;
+  private static barrierMaterial(): THREE.Material {
+    if (!Game.barrierMat) {
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 32;
+      const g = c.getContext('2d')!;
+      for (let i = 0; i < 8; i++) {
+        g.fillStyle = i % 2 ? '#141414' : '#f5c518';
+        g.beginPath();
+        g.moveTo(i * 16 - 16, 32); g.lineTo(i * 16, 0); g.lineTo(i * 16 + 16, 0); g.lineTo(i * 16, 32);
+        g.fill();
+      }
+      g.fillStyle = '#c62828';
+      g.font = '900 13px sans-serif';
+      g.fillText('POLICE', 40, 21);
+      const t = new THREE.CanvasTexture(c);
+      t.colorSpace = THREE.SRGBColorSpace;
+      Game.barrierMat = new THREE.MeshLambertMaterial({ map: t });
+    }
+    return Game.barrierMat;
   }
 
   setControlsLocked(locked: boolean) {
@@ -174,7 +234,10 @@ export class Game implements GameLoop, StoryHost {
       if (this.current) this.tryExit();
       else {
         const v = this.nearestVehicle();
-        if (v) this.enter(v);
+        if (v) {
+          this.enter(v);
+          this.hud.showToast(v.kind === 'bike' ? `${v.name} · chal, nikal!` : `${v.name} · Papa ki gaadi. Dhyaan se.`);
+        }
       }
     }
     if (this.interaction && !this.current && this.input.consume('KeyE')) {
@@ -203,6 +266,8 @@ export class Game implements GameLoop, StoryHost {
       this.obstacles.push({ x: v.position.x, z: v.position.z, halfLen: v.halfLength, isPlayer: v === active });
     }
     this.traffic.fixedUpdate(dt, { near: this.focus(), obstacles: this.obstacles, camera: this.engine.camera });
+    const fp = this.focus();
+    this.signals.update(dt, { x: fp.x, z: fp.z, heading: active ? active.heading : this.player.facing, speed: active ? active.speed : 0, driving: !!active });
     this.physics.step(dt);
   }
 
@@ -210,7 +275,7 @@ export class Game implements GameLoop, StoryHost {
     let best: Drivable | null = null;
     let bestD = Infinity;
     for (const v of this.vehicles) {
-      if (!v.available) continue;
+      if (!v.available || v.locked) continue;
       const d = Math.hypot(v.position.x - this.player.position.x, v.position.z - this.player.position.z);
       if (d < v.mountDistance && d < bestD) {
         best = v;
@@ -218,13 +283,6 @@ export class Game implements GameLoop, StoryHost {
       }
     }
     return best;
-  }
-
-  private enter(v: Drivable) {
-    this.current = v;
-    this.player.setActive(false);
-    v.seat(this.player.rig);
-    this.hud.showToast(v.kind === 'bike' ? `${v.name} · chal, nikal!` : `${v.name} · Papa ki gaadi. Dhyaan se.`);
   }
 
   private tryExit() {
@@ -264,11 +322,29 @@ export class Game implements GameLoop, StoryHost {
     }
   }
 
+  /** Show the next mission's start point; start it when the player arrives. */
+  private updateMissionTrigger() {
+    const next = this.storyStarted && !this.missions.running ? this.missions.nextAvailable() : null;
+    const t = next?.trigger;
+    if (!t || this.input.locked) {
+      this.triggerMarker.hide();
+      return;
+    }
+    this.triggerMarker.show(t.x, t.z, KERB + 0.02);
+    this.triggerLetter = t.label;
+    const f = this.focus();
+    if (Math.hypot(f.x - t.x, f.z - t.z) < t.radius && (!this.current || Math.abs(this.current.speed) < 3)) {
+      this.triggerMarker.hide();
+      this.missions.start(next!);
+    }
+  }
+
   // ------------------------------------------------------------ frame
 
   update(dt: number, alpha: number) {
     const v = this.current;
     this.missions.tick(dt);
+    this.updateMissionTrigger();
     this.dialogue.update(dt, this.input);
 
     this.player.render(alpha, dt);
@@ -283,6 +359,7 @@ export class Game implements GameLoop, StoryHost {
     this.crowd.render(alpha, dt, this.engine.camera.position);
     this.traffic.render(alpha);
     this.marker.update(dt);
+    this.triggerMarker.update(dt);
     this.env.update(this.engine.camera.position, target.position);
 
     // HUD
@@ -292,14 +369,19 @@ export class Game implements GameLoop, StoryHost {
       const it = this.interaction;
       const nearIt = it && Math.hypot(this.player.position.x - it.x, this.player.position.z - it.z) < it.radius;
       const near = this.nearestVehicle();
-      this.hud.setPrompt(nearIt ? `E — ${it!.label}` : near ? `F — ${near.kind === 'bike' ? 'ride' : 'drive'} the ${near.name}` : null);
+      const lockedCar = !near && this.car.locked && this.car.available &&
+        Math.hypot(this.car.position.x - this.player.position.x, this.car.position.z - this.player.position.z) < this.car.mountDistance;
+      this.hud.setPrompt(nearIt ? `E — ${it!.label}`
+        : near ? `F — ${near.kind === 'bike' ? 'ride' : 'drive'} the ${near.name}`
+        : lockedCar ? '🔒 Locked — Lucky ke paas chaabi hai' : null);
     } else {
       this.hud.setPrompt(v.kmh < 3 ? `F — get ${v.kind === 'bike' ? 'off' : 'out'}` : null);
     }
     this.hud.setSpeed(v && !locked ? v.kmh : null, v?.name);
     this.hud.update(dt);
     const f = this.focus();
-    this.minimap.draw(f.x, f.z, v ? v.heading : this.player.facing, this.camera.yaw, this.marker.position);
+    const tp = this.triggerMarker.position;
+    this.minimap.draw(f.x, f.z, v ? v.heading : this.player.facing, this.camera.yaw, this.marker.position, tp ? { ...tp, letter: this.triggerLetter } : null);
 
     // audio
     this.audio.setEngine(!!v, v ? v.speed : 0, v ? v.throttle : 0, v?.kind === 'car' ? 0.7 : 1);

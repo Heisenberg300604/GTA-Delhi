@@ -12,12 +12,13 @@ export class Hud {
   private bark: HTMLDivElement;
   private barkTimer = 0;
   private splashTimer = 0;
+  private debtTween: { from: number; to: number; t: number; dur: number } | null = null;
 
   constructor(parent: HTMLElement, onStart: () => void) {
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
-      <div class="hud-title">RING ROAD <span>· Project Dilli · Phase 4 · Mission 1</span></div>
+      <div class="hud-title">RING ROAD <span>· Project Dilli · Phase 5 · Missions 1–2</span></div>
       <div class="hud-hisaab hidden"><div class="label">हिसाब · FAMILY DEBT</div><div class="amount">₹14,00,000</div></div>
       <div class="hud-wallet">₹1,200</div>
       <div class="hud-objective"></div>
@@ -124,6 +125,12 @@ export class Hud {
     this.q('.hud-hisaab .amount').textContent = `₹${amount.toLocaleString('en-IN')}`;
   }
 
+  /** Count the debt down (or up) on the HUD. */
+  animateDebt(from: number, to: number, seconds = 2) {
+    this.debtTween = { from, to, t: 0, dur: seconds };
+    this.q('.hud-hisaab').classList.add('pulse');
+  }
+
   /** Big rubber-stamp splash (mission passed, debt reveal...). */
   splash(stamp: string, title: string, sub: string, seconds = 4.5) {
     const el = this.q('.hud-splash');
@@ -144,6 +151,17 @@ export class Hud {
   }
 
   update(dt: number) {
+    if (this.debtTween) {
+      const tw = this.debtTween;
+      tw.t = Math.min(tw.dur, tw.t + dt);
+      const k = tw.t / tw.dur;
+      const v = Math.round(tw.from + (tw.to - tw.from) * (1 - Math.pow(1 - k, 3)));
+      this.q('.hud-hisaab .amount').textContent = `₹${v.toLocaleString('en-IN')}`;
+      if (k >= 1) {
+        this.debtTween = null;
+        this.q('.hud-hisaab').classList.remove('pulse');
+      }
+    }
     if (this.splashTimer > 0) {
       this.splashTimer -= dt;
       if (this.splashTimer <= 0) this.q('.hud-splash').classList.remove('show');

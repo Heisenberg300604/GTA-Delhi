@@ -26,6 +26,7 @@ export class CarController implements Drivable {
   readonly collider: RAPIER.Collider;
   private model = new VehicleModel('hatch', CAR.color);
   available = true;
+  locked = false;
 
   heading: number;
   speed = 0; // forward component, m/s

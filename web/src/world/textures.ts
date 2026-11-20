@@ -196,7 +196,21 @@ export const SIGNS: [string, string, string, string][] = [
   ['NORBU ROOFTOP CAFÉ', 'Laphing • Butter Tea', '#8d1b1b', '#ffd54f'],
   ['SHEHNAI PALACE', 'Banquet • Weddings', '#4a148c', '#ffd700'],
   ['METRO GUEST HOUSE', 'गेस्ट हाउस', '#263238', '#80cbc4'],
+  // --- story signs (32+) — never picked at random
+  ['RING ROAD PARKING', 'MAJNU KA TILA · ₹20/HR', '#141b2d', '#f5c518'],
+  ['BHALLA PAPER TRADERS', 'GODOWN · NO ENTRY', '#6d1a1a', '#f5d3a3'],
+  // --- Majnu Ka Tila colony signs (34+)
+  ['LAPHING CORNER', 'Laphing • Momos • Thukpa', '#7b1f1f', '#ffd54f'],
+  ['TASHI DELEK GUEST HOUSE', 'Rooms • WiFi', '#f4efe6', '#8d1b1b'],
+  ['HIMALAYA MOMO HOUSE', 'Steam • Fried • Kothey', '#1f5fa8', '#ffffff'],
+  ['THANGKA ART GALLERY', 'Paintings • Prayer Flags', '#f2c14e', '#5d1a1a'],
+  ['BUTTER TEA STALL', 'Po Cha • Bread', '#5d4037', '#ffe0b2'],
+  ['TIBETAN BOOK HOUSE', 'Books • Incense', '#2e7d32', '#ffffff'],
 ];
+
+export const STORY_SIGN = { chai: 0, bakery: 1, parking: 32, godown: 33 };
+export const RANDOM_SIGNS: [number, number] = [2, 32];
+export const COLONY_SIGNS: [number, number] = [34, 40];
 
 export interface SignAtlas {
   texture: THREE.CanvasTexture;
@@ -206,7 +220,7 @@ export interface SignAtlas {
 }
 
 export function makeSignAtlas(): SignAtlas {
-  const cols = 4, rows = 8, cw = 256, ch = 128;
+  const cols = 4, rows = 10, cw = 256, ch = 128;
   const [c, ctx] = canvas(cols * cw, rows * ch);
   SIGNS.forEach(([main, sub, bg, fg], i) => {
     const x = (i % cols) * cw, y = Math.floor(i / cols) * ch;

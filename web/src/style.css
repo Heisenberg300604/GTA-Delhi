@@ -133,3 +133,6 @@ canvas { display: block; }
   85% { opacity: 1; }
   100% { opacity: 0; }
 }
+
+.hud-hisaab.pulse { animation: debtPulse 0.5s ease-in-out infinite alternate; }
+@keyframes debtPulse { to { transform: rotate(-1.5deg) scale(1.08); box-shadow: 0 0 24px #7bd389; } }

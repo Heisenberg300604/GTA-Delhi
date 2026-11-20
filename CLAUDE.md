@@ -17,10 +17,10 @@ An original, Delhi-inspired open-world browser game. **Source of truth: [docs/GD
   - `src/player` on-foot controller + rig · `src/vehicles` bike · `src/camera` · `src/ui` HUD · `src/debug`
   - `src/story`: mission runtime (`MissionContext` primitives, `MissionManager`), cast, `missions/*` scripts
   - `src/save`: versioned localStorage save
-  - `scripts/smoke.mjs`: headless gameplay test · `scripts/mission-m01.mjs`: full M1 playthrough (both use installed Chrome via playwright-core)
+  - `scripts/smoke.mjs`: headless gameplay test · `scripts/mission-mXX.mjs`: full mission playthroughs (both use installed Chrome via playwright-core)
 - `tools/blender/`: headless Blender Python scripts for asset generation/conversion
 - `assets-src/`: source files (FBX/.blend); exported GLBs go to `web/public/assets/`
 
 ## Commands (run in `web/`)
-- `npm run dev` (port 5173) · `npm run typecheck` · `npm run build` · `npm run smoke` · `npm run test:m01` (tests need the dev server running)
+- `npm run dev` (port 5173) · `npm run typecheck` · `npm run build` · `npm run smoke` · `npm run test:m01` · `npm run test:m02` (tests need the dev server running)
 - Quality presets: `?q=low|medium|high`. F3 toggles stats.

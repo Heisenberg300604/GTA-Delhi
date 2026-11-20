@@ -1,5 +1,5 @@
 import type { StoryHost } from './StoryHost';
-import { MissionContext, MissionAborted } from './MissionContext';
+import { MissionContext, MissionAborted, MissionFailed } from './MissionContext';
 
 export interface Stage {
   id: string;
@@ -13,6 +13,10 @@ export interface Mission {
   title: string;
   reward: number;
   next?: string;
+  /** Replaces the "+₹reward" line on the MISSION PASSED stamp. */
+  rewardText?: string;
+  /** Walk/drive here to start. Missions without a trigger start right away. */
+  trigger?: { x: number; z: number; radius: number; label: string };
   stages: Stage[];
   onComplete?: (host: StoryHost) => void;
 }
@@ -39,7 +43,13 @@ export class MissionManager {
     this.ctx?.tick(dt);
   }
 
-  /** Resume a saved checkpoint, or start the first mission not yet completed. */
+  /** First mission not yet completed (in story order). */
+  nextAvailable(): Mission | null {
+    const done = this.host.save.data.completed;
+    return [...this.registry.values()].find((m) => !done.includes(m.id)) ?? null;
+  }
+
+  /** Resume a saved checkpoint, or start the next mission if it has no trigger. */
   startNext(): boolean {
     const save = this.host.save.data;
     if (save.current && this.registry.has(save.current.mission)) {
@@ -47,10 +57,14 @@ export class MissionManager {
       void this.run(m, save.current.stage, save.current.vars, true);
       return true;
     }
-    const next = [...this.registry.values()].find((m) => !save.completed.includes(m.id));
-    if (!next) return false;
+    const next = this.nextAvailable();
+    if (!next || next.trigger) return false;
     void this.run(next, 0, {}, false);
     return true;
+  }
+
+  start(m: Mission) {
+    void this.run(m, 0, {}, false);
   }
 
   abort() {
@@ -64,12 +78,29 @@ export class MissionManager {
     this.active = m;
     this.ctx = ctx;
     try {
-      for (let i = fromStage; i < m.stages.length; i++) {
+      let restore = resume;
+      for (let i = fromStage; i < m.stages.length; ) {
         const stage = m.stages[i];
         host.save.data.current = { mission: m.id, stage: i, vars: ctx.vars };
         host.save.save();
-        if (resume && i === fromStage) stage.restore?.(host, ctx);
-        await stage.run(ctx);
+        const snapshot = structuredClone(ctx.vars);
+        if (restore) stage.restore?.(host, ctx);
+        try {
+          await stage.run(ctx);
+          i++;
+          restore = false;
+        } catch (err) {
+          if (!(err instanceof MissionFailed)) throw err;
+          // failed: show why, then retry this stage from its checkpoint
+          ctx.clearFailure();
+          ctx.cleanup();
+          host.setControlsLocked(false);
+          host.dialogue.hide();
+          host.hud.splash('MISSION FAILED', m.title, err.message, 3.2);
+          await ctx.wait(3.2);
+          ctx.vars = structuredClone(snapshot);
+          restore = true;
+        }
       }
       // completed
       const save = host.save.data;
@@ -79,7 +110,8 @@ export class MissionManager {
       host.save.save();
       host.hud.setWallet(save.money);
       m.onComplete?.(host);
-      host.hud.splash('MISSION PASSED', m.title, `+₹${m.reward.toLocaleString('en-IN')}${m.next ? ` · Next: ${m.next}` : ''}`);
+      const reward = m.rewardText ?? `+₹${m.reward.toLocaleString('en-IN')}`;
+      host.hud.splash('MISSION PASSED', m.title, `${reward}${m.next ? ` · Next: ${m.next}` : ''}`);
     } catch (err) {
       if (!(err instanceof MissionAborted)) {
         console.error(`Mission ${m.id} crashed`, err);

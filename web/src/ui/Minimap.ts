@@ -16,7 +16,7 @@ export class Minimap {
     this.ctx = this.canvas.getContext('2d')!;
   }
 
-  draw(px: number, pz: number, heading: number, cameraYaw: number, marker: { x: number; z: number } | null) {
+  draw(px: number, pz: number, heading: number, cameraYaw: number, marker: { x: number; z: number } | null, blip: { x: number; z: number; letter: string } | null = null) {
     const ctx = this.ctx;
     const S = this.size * 2;
     const c = Math.cos(cameraYaw), s = Math.sin(cameraYaw);
@@ -48,6 +48,28 @@ export class Minimap {
     }
     ctx.restore();
 
+    // mission-start blip (letter in an orange disc)
+    if (blip) {
+      const dx = blip.x - px, dz = blip.z - pz;
+      let sx = (c * dx - s * dz) * k, sy = (s * dx + c * dz) * k;
+      const r = Math.hypot(sx, sy), max = S / 2 - 22;
+      if (r > max) {
+        sx *= max / r;
+        sy *= max / r;
+      }
+      ctx.fillStyle = '#ff7043';
+      ctx.strokeStyle = '#141b2d';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(S / 2 + sx, S / 2 + sy, 17, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#141b2d';
+      ctx.font = '900 22px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(blip.letter, S / 2 + sx, S / 2 + sy + 1);
+    }
     // marker (clamped to the rim when off-map)
     if (marker) {
       const dx = marker.x - px, dz = marker.z - pz;

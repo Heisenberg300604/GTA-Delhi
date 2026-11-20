@@ -9,7 +9,7 @@ import {
 } from './cityLayout';
 import {
   makeWindowTexture, makeShopTexture, makeAsphaltTexture, makePavingTexture, makeGrassTexture,
-  makeSignAtlas, type SignAtlas,
+  makeSignAtlas, type SignAtlas, STORY_SIGN, RANDOM_SIGNS, COLONY_SIGNS,
 } from './textures';
 
 const col = (hex: string) => new THREE.Color(hex);
@@ -20,6 +20,9 @@ const WALL_PALETTE = [
 const AWNING_COLORS = ['#1f5fa8', '#2e7d32', '#c62828', '#f9a825', '#00838f', '#6a1b9a'].map(col);
 const CLOTH_COLORS = ['#e53935', '#fdd835', '#1e88e5', '#ffffff', '#ec407a', '#43a047', '#ff7043'].map(col);
 const CAR_COLORS = ['#f2f2f2', '#c0c4c8', '#8a1c1c', '#1d3c8f', '#2b2b2b', '#d7ccc8', '#6d7b8d'].map(col);
+const COLONY_PALETTE = ['#f4efe6', '#f7f3ea', '#e9d8a6', '#c94f4f', '#f2c14e', '#a9cce3', '#efe2c4'].map(col);
+const COLONY_TRIM = ['#8d1b1b', '#f2c14e', '#1f5fa8', '#2e7d32', '#8d1b1b'].map(col);
+const FLAG_COLORS = ['#1e5bb8', '#ffffff', '#c62828', '#2e7d32', '#f9c80e'].map(col); // prayer flag order
 const SCOOTER_COLORS = ['#e53935', '#1e88e5', '#212121', '#f5f5f5', '#8e24aa', '#ffb300'].map(col);
 
 const GROUND_FLOOR = 4.0;
@@ -57,14 +60,22 @@ export class City {
   private skyline = new InstanceBatch();
   private wires: number[] = [];
   private atlas: SignAtlas;
+  /** Style of the block currently being built. */
+  private style: 'market' | 'colony' = 'market';
 
   constructor(scene: THREE.Scene, private readonly physics: Physics) {
     this.atlas = makeSignAtlas();
     this.buildGround();
     for (const block of computeBlocks()) {
       this.buildSidewalk(block);
+      this.style = block.kind === 'colony' ? 'colony' : 'market';
       if (block.kind === 'park') this.buildPark(block);
-      else this.buildMarketBlock(block);
+      else if (block.kind === 'parking') this.buildParkingLot(block);
+      else if (block.kind === 'godown') this.buildGodown(block);
+      else {
+        this.buildMarketBlock(block);
+        if (block.kind === 'colony') this.prayerFlags(block);
+      }
     }
     for (const road of ROADS) {
       this.buildMarkings(road);
@@ -167,10 +178,11 @@ export class City {
     const rng = this.rng;
     const floors = rng.int(1, 4);
     const h = GROUND_FLOOR + floors * FLOOR_HEIGHT;
-    const wallC = rng.pick(WALL_PALETTE).clone().multiplyScalar(rng.float(0.85, 1.05));
+    const colony = this.style === 'colony';
+    const wallC = rng.pick(colony ? COLONY_PALETTE : WALL_PALETTE).clone().multiplyScalar(rng.float(0.88, 1.04));
     const shopC = wallC.clone().lerp(col('#ffffff'), 0.55);
     const roofC = col('#8f887d').multiplyScalar(rng.float(0.85, 1.1));
-    const trimC = wallC.clone().multiplyScalar(0.8);
+    const trimC = colony ? rng.pick(COLONY_TRIM) : wallC.clone().multiplyScalar(0.8);
 
     const faces: FaceDef[] = [
       { sx: x0, sz: z1, ex: x1, ez: z1, nx: 0, nz: 1 },
@@ -247,7 +259,8 @@ export class City {
       const cx = f.sx + rx * t + f.nx * 0.07, cz = f.sz + rz * t + f.nz * 0.07;
       const y0 = 2.95, y1 = 4.0;
       const hx = rx * sw / 2, hz = rz * sw / 2;
-      const idx = 2 + Math.floor(rng.next() * (this.atlas.count - 2)); // 0, 1 are story signs
+      const [a0, a1] = this.style === 'colony' ? COLONY_SIGNS : RANDOM_SIGNS;
+      const idx = a0 + Math.floor(rng.next() * (a1 - a0));
       this.signs.quad(
         [cx - hx, y0, cz - hz], [cx + hx, y0, cz + hz], [cx + hx, y1, cz + hz], [cx - hx, y1, cz - hz],
         this.atlas.uv(idx), col('#ffffff'),
@@ -447,20 +460,20 @@ export class City {
 
   // ---------------------------------------------------------------- vehicles & stall
 
-  private parkedCar(x: number, z: number, yaw: number) {
+  private parkedCar(x: number, z: number, yaw: number, base = 0) {
     const c = this.rng.pick(CAR_COLORS);
     const glass = col('#27313b');
     const dark = col('#1a1a1a');
     const f = (lx: number, lz: number) => ({ x: x + lx * Math.cos(yaw) + lz * Math.sin(yaw), z: z - lx * Math.sin(yaw) + lz * Math.cos(yaw) });
-    this.props.box(x, 0.62, z, 1.7, 0.7, 3.9, yaw, c);
+    this.props.box(x, base + 0.62, z, 1.7, 0.7, 3.9, yaw, c);
     const cab = f(0, -0.2);
-    this.props.box(cab.x, 1.22, cab.z, 1.5, 0.5, 2.0, yaw, glass);
-    this.props.box(cab.x, 1.5, cab.z, 1.45, 0.06, 1.9, yaw, c);
+    this.props.box(cab.x, base + 1.22, cab.z, 1.5, 0.5, 2.0, yaw, glass);
+    this.props.box(cab.x, base + 1.5, cab.z, 1.45, 0.06, 1.9, yaw, c);
     for (const [lx, lz] of [[-0.78, 1.25], [0.78, 1.25], [-0.78, -1.25], [0.78, -1.25]]) {
       const w = f(lx, lz);
-      this.props.box(w.x, 0.32, w.z, 0.22, 0.62, 0.62, yaw, dark);
+      this.props.box(w.x, base + 0.32, w.z, 0.22, 0.62, 0.62, yaw, dark);
     }
-    this.physics.addStaticBox(x, 0.8, z, 0.85, 0.8, 1.95, yaw);
+    this.physics.addStaticBox(x, base + 0.8, z, 0.85, 0.8, 1.95, yaw);
   }
 
   private buildParkedVehicles() {
@@ -527,7 +540,7 @@ export class City {
     const { x, z } = LANDMARKS.bakery;
     const y = KERB;
     const fz = z + 0.09;
-    this.signs.quad([x - 2.2, 2.85, fz], [x + 2.2, 2.85, fz], [x + 2.2, 4.0, fz], [x - 2.2, 4.0, fz], this.atlas.uv(1), col('#ffffff'));
+    this.signs.quad([x - 2.2, 2.85, fz], [x + 2.2, 2.85, fz], [x + 2.2, 4.0, fz], [x - 2.2, 4.0, fz], this.atlas.uv(STORY_SIGN.bakery), col('#ffffff'));
     this.decor.add(x, 2.75 - Math.sin(0.3) * 0.75, z + 0.75, 4.4, 0.05, 1.5, col('#f06292'), 0, 0.3);
     this.decor.add(x, y + 0.5, z + 1.0, 2.4, 1.0, 0.7, col('#f3e5f5')); // display counter
     this.decor.add(x, y + 1.02, z + 1.0, 2.45, 0.05, 0.75, col('#9ec9d9')); // glass top
@@ -548,6 +561,128 @@ export class City {
       const side = i % 2 ? 1 : -1;
       this.canopies.add(x - 0.3, y + 2.3 + (i % 3) * 0.28, z + side * (0.85 + (i % 3) * 0.12), 0.45, 0.55, 0.45, col(c), i);
     });
+  }
+
+  /** Majnu Ka Tila: strings of prayer flags between rooftops and across lanes. */
+  private prayerFlags(b: Block) {
+    const rng = this.rng;
+    const inset = SIDEWALK + 1;
+    const pick = () => ({
+      x: rng.float(b.x0 + inset, b.x1 - inset),
+      z: rng.float(b.z0 + inset, b.z1 - inset),
+      y: rng.float(8.5, 12),
+    });
+    const strings: [{ x: number; z: number; y: number }, { x: number; z: number; y: number }][] = [];
+    for (let i = 0; i < 6; i++) strings.push([pick(), pick()]);
+    // a few across the lane edges, from the block to the road's far side
+    for (const side of [-1, 1]) {
+      const z = side < 0 ? b.z0 : b.z1;
+      if (z >= MAP_HALF) continue;
+      for (let i = 0; i < 2; i++) {
+        const x = rng.float(b.x0 + 6, b.x1 - 6);
+        strings.push([{ x, z: z - side * 3, y: 7.5 }, { x: x + rng.float(-6, 6), z: z + side * 9, y: 7.5 }]);
+      }
+    }
+    for (const [a, c] of strings) {
+      const len = Math.hypot(c.x - a.x, c.z - a.z);
+      if (len < 5) continue;
+      const n = Math.floor(len / 0.55);
+      const yaw = Math.atan2(c.x - a.x, c.z - a.z) + Math.PI / 2;
+      this.wire(a.x, a.y, a.z, c.x, c.y, c.z, len * 0.06);
+      for (let i = 1; i < n; i++) {
+        const t = i / n;
+        const y = a.y + (c.y - a.y) * t - len * 0.06 * 4 * t * (1 - t) - 0.2;
+        this.decor.add(a.x + (c.x - a.x) * t, y, a.z + (c.z - a.z) * t, 0.34, 0.4, 0.02, FLAG_COLORS[i % 5], yaw);
+      }
+    }
+  }
+
+  /** Ring Road Parking: the Kothi-run lot where the family car ends up (M2). */
+  private buildParkingLot(b: Block) {
+    const rng = this.rng;
+    const x0 = b.x0 + SIDEWALK, x1 = b.x1 - SIDEWALK, z0 = b.z0 + SIDEWALK, z1 = b.z1 - SIDEWALK;
+    const y = KERB;
+    this.markings.floor(x0, z0, x1, z1, y + 0.004, col('#3d3c3b'), 0); // asphalt surface
+    // bay lines along two rows
+    for (const rowZ of [z1 - 5.2, (z0 + z1) / 2 - 1]) {
+      for (let x = x0 + 2; x < x1 - 2; x += 2.9) this.markings.floor(x - 0.06, rowZ - 2.4, x + 0.06, rowZ + 2.4, y + 0.012, col('#e9e6dc'), 0);
+    }
+    // low wall with the gate on the south side
+    const gate = { a: -76.5, b: -67.5 };
+    const wallC = col('#bfb3a1'), wh = 1.0, wt = 0.3;
+    const wall = (ax: number, az: number, bx: number, bz: number) => {
+      const mx = (ax + bx) / 2, mz = (az + bz) / 2, sx = Math.max(wt, Math.abs(bx - ax)), sz = Math.max(wt, Math.abs(bz - az));
+      this.decor.add(mx, y + wh / 2, mz, sx, wh, sz, wallC);
+      this.physics.addStaticBox(mx, y + wh / 2, mz, sx / 2, wh / 2, sz / 2);
+    };
+    wall(x0, z0, gate.a, z0);
+    wall(gate.b, z0, x1, z0);
+    wall(x0, z1, x1, z1);
+    wall(x0, z0, x0, z1);
+    wall(x1, z0, x1, z1);
+    // gate arch with the lot's sign
+    for (const gx of [gate.a, gate.b]) this.poles.add(gx, y + 2.4, z0, 0.25, 4.8, 0.25, col('#3a3a3a'));
+    const sz = z0 - 0.05;
+    this.signs.quad([gate.b - 0.2, y + 3.6, sz], [gate.a + 0.2, y + 3.6, sz], [gate.a + 0.2, y + 4.8, sz], [gate.b - 0.2, y + 4.8, sz], this.atlas.uv(STORY_SIGN.parking), col('#ffffff'));
+    this.signs.quad([gate.a + 0.2, y + 3.6, sz + 0.1], [gate.b - 0.2, y + 3.6, sz + 0.1], [gate.b - 0.2, y + 4.8, sz + 0.1], [gate.a + 0.2, y + 4.8, sz + 0.1], this.atlas.uv(STORY_SIGN.parking), col('#ffffff'));
+    // attendant booth + umbrella + plastic chair
+    const bx = -64.5, bz = z0 + 2.2;
+    this.decor.add(bx, y + 1.1, bz, 1.6, 2.2, 1.6, col('#e9e4d8'));
+    this.decor.add(bx, y + 2.28, bz, 1.9, 0.16, 1.9, col('#1f5fa8'));
+    this.physics.addStaticBox(bx, y + 1.1, bz, 0.8, 1.1, 0.8);
+    this.poles.add(-67.8, y + 1.2, bz - 0.3, 0.06, 2.4, 0.06, col('#cccccc'));
+    this.canopies.add(-67.8, y + 2.45, bz - 0.3, 3.0, 0.5, 3.0, col('#d32f2f'), 0.3);
+    this.decor.add(-67.2, y + 0.45, bz + 0.6, 0.5, 0.06, 0.5, col('#f5f5f5'));
+    // parked cars (the family car's bay stays empty — the game places it)
+    for (const rowZ of [z1 - 5.2, (z0 + z1) / 2 - 1]) {
+      for (let x = x0 + 3.45; x < x1 - 2; x += 2.9) {
+        if (Math.abs(x - LANDMARKS.lotCar.x) < 2 && Math.abs(rowZ - LANDMARKS.lotCar.z) < 3) continue;
+        if (x > gate.a - 1 && x < gate.b + 1 && rowZ < (z0 + z1) / 2) continue; // driving aisle from the gate
+        if (!rng.chance(0.75)) continue;
+        this.parkedCar(x, rowZ, rng.chance(0.5) ? 0 : Math.PI, y);
+      }
+    }
+  }
+
+  /** Bhalla Paper Traders godown: shed + yard + walled compound with a west gate (M2). */
+  private buildGodown(b: Block) {
+    const x0 = b.x0 + SIDEWALK, z0 = b.z0 + SIDEWALK, z1 = b.z1 - SIDEWALK, x1 = MAP_HALF - 1;
+    const y = KERB;
+    this.markings.floor(x0, z0, x1, z1, y + 0.004, col('#9c968b'), 0); // concrete yard
+    // shed
+    const sx0 = 122, sx1 = x1 - 1, sz0 = z0 + 2, sz1 = z1 - 2, h = 7.5;
+    const shed = col('#c9c2b5');
+    const faces: FaceDef[] = [
+      { sx: sx0, sz: sz1, ex: sx1, ez: sz1, nx: 0, nz: 1 },
+      { sx: sx1, sz: sz0, ex: sx0, ez: sz0, nx: 0, nz: -1 },
+      { sx: sx1, sz: sz1, ex: sx1, ez: sz0, nx: 1, nz: 0 },
+      { sx: sx0, sz: sz0, ex: sx0, ez: sz1, nx: -1, nz: 0 },
+    ];
+    for (const f of faces) {
+      const len = Math.hypot(f.ex - f.sx, f.ez - f.sz);
+      const bays = Math.max(1, Math.round(len / 4.5));
+      this.shops.wall(f.sx, f.sz, f.ex, f.ez, 0, 4.2, [0.5, 0, 0.5 + bays * 0.5, 1], shed);
+      this.roofs.wall(f.sx, f.sz, f.ex, f.ez, 4.2, h, [0, 0, 1, 1], shed.clone().multiplyScalar(0.85));
+    }
+    this.roofs.floor(sx0, sz0, sx1, sz1, h, col('#7d8790'));
+    this.physics.addStaticBox((sx0 + sx1) / 2, h / 2, (sz0 + sz1) / 2, (sx1 - sx0) / 2, h / 2, (sz1 - sz0) / 2);
+    const signX = sx0 - 0.08, gz = LANDMARKS.godownGate.z;
+    this.signs.quad([signX, 4.6, gz + 3], [signX, 4.6, gz - 3], [signX, 6.6, gz - 3], [signX, 6.6, gz + 3], this.atlas.uv(STORY_SIGN.godown), col('#ffffff'));
+    // compound wall with a gate on the west side
+    const wallC = col('#d8cfc0'), wh = 2.2, wt = 0.3;
+    const wall = (ax: number, az: number, bx: number, bz: number) => {
+      const mx = (ax + bx) / 2, mz = (az + bz) / 2, sx = Math.max(wt, Math.abs(bx - ax)), sz = Math.max(wt, Math.abs(bz - az));
+      this.decor.add(mx, y + wh / 2, mz, sx, wh, sz, wallC);
+      this.physics.addStaticBox(mx, y + wh / 2, mz, sx / 2, wh / 2, sz / 2);
+    };
+    wall(x0, z0, x0, gz - 4);
+    wall(x0, gz + 4, x0, z1);
+    wall(x0, z1, x1, z1);
+    wall(x0, z0, x1, z0);
+    for (const gzz of [gz - 4, gz + 4]) this.decor.add(x0, y + 1.4, gzz, 0.6, 2.8, 0.6, col('#8d1b1b'));
+    // paper bales and a hand cart in the yard
+    for (let i = 0; i < 6; i++) this.decor.add(119.5, y + 0.45 + (i % 2) * 0.9, z0 + 3 + Math.floor(i / 2) * 1.3, 1.2, 0.9, 1.1, col(i % 3 ? '#e8dcc0' : '#d7c9a7'));
+    this.physics.addStaticBox(119.5, y + 0.9, z0 + 4.3, 0.6, 0.9, 2.0);
   }
 
   // ---------------------------------------------------------------- edges

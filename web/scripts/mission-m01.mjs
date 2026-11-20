@@ -102,11 +102,11 @@ await page.waitForTimeout(300);
 await shot('m1-09-passed');
 const end = await g(() => {
   const s = window.__game;
-  return { money: s.save.data.money, debtRevealed: s.save.data.debtRevealed, carAvailable: s.car.available,
+  return { money: s.save.data.money, debtRevealed: s.save.data.debtRevealed, carLocked: s.car.locked, carAtLot: Math.hypot(s.car.position.x + 80, s.car.position.z - 123.5) < 2,
     debtVisible: !document.querySelector('.hud-hisaab').classList.contains('hidden'),
     stored: JSON.parse(localStorage.getItem('ringroad.save') || '{}').completed };
 });
-check('debt revealed on HUD, family car seized, shift pay received, saved', end.debtRevealed && end.debtVisible && !end.carAvailable && end.money === 1250 && end.stored?.includes('m01'), end);
+check('debt revealed on HUD, family car seized (locked in the Kothi lot), shift pay received, saved', end.debtRevealed && end.debtVisible && end.carLocked && end.carAtLot && end.money === 1250 && end.stored?.includes('m01'), end);
 check('no runtime errors', errors.length === 0, errors.slice(0, 5));
 await browser.close();
 process.exit(results.every(Boolean) ? 0 : 1);

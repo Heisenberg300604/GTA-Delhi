@@ -1133,5 +1133,6 @@ Cutscenes are essential to the San Andreas-style story feel, so they get a prope
 | 2026-11-21 | 1 | Bike physics fix: Rapier's character controller snags a box (and a horizontal capsule) on flat ground, so the bike collider floats 17 cm up and height comes from a ground ray. Kerb hopping works for free. |
 | 2026-11-21 | 2 | Pedestrians (instanced, 11 draw calls for up to 60 people), ambient horns, bark subtitles. 139 draw calls (high) / 76 (low). |
 | 2026-11-21 | 2 | Traffic AI (cars, autos, DTS buses), drivable Sitara Pari with handbrake drift. |
+| 2026-11-21 | 5 | M2 "Shareef Driving" playable: Ring Road + Majnu Ka Tila colony + Kothi lot + godown, traffic signals, shareef meter, police naka, mission fail/retry, start triggers. 57/57 automated checks across 3 suites. |
 | 2026-11-21 | 4 | Phase 4: mission runtime, cutscenes, dialogue, minimap, save system; M1 "Happy Birthday, Pihu" playable end to end. Bug found by the M1 test: latched key presses were cleared before the UI read them; now cleared at end of frame. |
 | 2026-11-21 | 3 | Aryan becomes a real animated model (CC0 Quaternius base via the Blender pipeline, palette-recoloured). Nearest pedestrians use the same model (level of detail). 139 draw calls high / 66 low, 17/17 smoke checks. |

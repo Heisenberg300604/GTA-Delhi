@@ -244,6 +244,10 @@ async function party(ctx: MissionContext) {
   save.debtRevealed = true;
   save.flags.carSeized = true;
   h.hud.setDebt(save.debt, true);
+  // the seized car now waits, locked, in the Kothi's lot (M2 starts there)
+  h.car.setAvailable(true);
+  h.car.locked = true;
+  h.car.teleport(v3(LANDMARKS.lotCar.x, KERB, LANDMARKS.lotCar.z), LANDMARKS.lotCar.heading);
   h.hud.splash('₹14,00,000', 'हिसाब · The family owes the Kothi', '', 3.6);
   await ctx.wait(3.8);
   await ctx.say('gogi', 'Ring Road Parking, Majnu Ka Tila. Gaadi wahan milegi. — G', 'SMS from an unknown number: "Ring Road Parking, Majnu Ka Tila. The car will be there."', true);
@@ -268,4 +272,3 @@ export const M01_BIRTHDAY: Mission = {
   ],
 };
 
-export const MISSIONS: Mission[] = [M01_BIRTHDAY];

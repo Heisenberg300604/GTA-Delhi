@@ -9,6 +9,7 @@ import type { SaveManager } from '../save/SaveManager';
 import type { PlayerController } from '../player/PlayerController';
 import type { Drivable } from '../vehicles/Drivable';
 import type { AnimatedCharacter } from '../player/AnimatedCharacter';
+import type { TrafficSignals } from '../world/TrafficSignals';
 
 export interface Interaction {
   x: number;
@@ -37,6 +38,11 @@ export interface StoryHost {
   focus(): THREE.Vector3;
   /** Pull the player out of any vehicle immediately. */
   forceExit(): void;
+  /** Put the player straight into a vehicle (checkpoint restore). */
+  enter(v: Drivable): void;
+  signals: TrafficSignals;
+  /** Striped barricade with a collider; returns a remover. */
+  spawnBarrier(x: number, z: number, length: number, yaw: number): () => void;
   setControlsLocked(locked: boolean): void;
   /** Keep pedestrians out of a circle (cutscene sets). */
   setCrowdExclusion(zone: { x: number; z: number; r: number } | null): void;
