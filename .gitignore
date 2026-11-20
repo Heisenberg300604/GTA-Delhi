@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+web/smoke-out/
+.claude/settings.local.json
+assets-src/**/*.fbx
+assets-src/**/*.blend1
