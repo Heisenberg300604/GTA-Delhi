@@ -21,6 +21,27 @@ export class CameraController {
   private idle = 0;
   private dir = new THREE.Vector3();
   private initialised = false;
+  /** Cutscene shot; when set, the camera ignores the player. */
+  private shot: { from: THREE.Vector3; to: THREE.Vector3; lookFrom: THREE.Vector3; lookTo: THREE.Vector3; t: number; duration: number; fov: number } | null = null;
+  private look = new THREE.Vector3();
+
+  /** Cut (duration 0) or glide to a camera position looking at a point. */
+  setShot(pos: THREE.Vector3, lookAt: THREE.Vector3, duration = 0, fov: number = CAMERA.fov) {
+    const from = duration > 0 && this.shot ? this.camera.position.clone() : pos.clone();
+    const lookFrom = duration > 0 && this.shot ? this.look.clone() : lookAt.clone();
+    this.shot = { from, to: pos.clone(), lookFrom, lookTo: lookAt.clone(), t: 0, duration, fov };
+  }
+
+  get shotDone(): boolean {
+    return !this.shot || this.shot.t >= this.shot.duration;
+  }
+
+  /** Return to the gameplay camera, placed behind the given heading. */
+  clearShot(behindHeading?: number) {
+    this.shot = null;
+    this.initialised = false;
+    if (behindHeading !== undefined) this.yaw = behindHeading + Math.PI;
+  }
 
   constructor(
     private readonly camera: THREE.PerspectiveCamera,
@@ -32,6 +53,20 @@ export class CameraController {
   }
 
   update(dt: number, input: Input, target: CameraTarget) {
+    if (this.shot) {
+      const s = this.shot;
+      s.t = Math.min(s.duration, s.t + dt);
+      const k = s.duration > 0 ? s.t / s.duration : 1;
+      const e = k * k * (3 - 2 * k); // smoothstep
+      this.camera.position.lerpVectors(s.from, s.to, e);
+      this.look.lerpVectors(s.lookFrom, s.lookTo, e);
+      this.camera.lookAt(this.look);
+      if (this.camera.fov !== s.fov) {
+        this.camera.fov = s.fov;
+        this.camera.updateProjectionMatrix();
+      }
+      return;
+    }
     const moved = input.mouseDX !== 0 || input.mouseDY !== 0;
     this.yaw -= input.mouseDX * CAMERA.sensitivity;
     this.pitch = clamp(this.pitch + input.mouseDY * CAMERA.sensitivity, CAMERA.minPitch, CAMERA.maxPitch);

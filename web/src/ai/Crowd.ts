@@ -86,6 +86,8 @@ export class Crowd {
   private barkCooldown = 0;
   /** Pool of full skinned characters for the nearest pedestrians (level of detail). */
   private pool: { ch: AnimatedCharacter; ped: Ped | null }[] = [];
+  /** Pedestrians are kept out of this circle (cutscene sets). */
+  exclusion: { x: number; z: number; r: number } | null = null;
   /** Set by the game to show subtitles. */
   onBark?: (text: string) => void;
 
@@ -194,6 +196,11 @@ export class Crowd {
       p.px = p.x;
       p.pz = p.z;
       const dPlayer = Math.hypot(p.x - ctx.playerPos.x, p.z - ctx.playerPos.z);
+      const ex = this.exclusion;
+      if (ex && Math.hypot(p.x - ex.x, p.z - ex.z) < ex.r) {
+        this.placeRandomly(p, ctx.playerPos, ex.r + 6, SPAWN_MAX, ctx.camera);
+        continue;
+      }
       if (dPlayer > DESPAWN) {
         this.placeRandomly(p, ctx.playerPos, SPAWN_MIN, SPAWN_MAX, ctx.camera);
         continue;

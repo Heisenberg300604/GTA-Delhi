@@ -3,66 +3,13 @@ import { RAPIER, Physics } from '../physics/Physics';
 import { Input } from '../engine/Input';
 import { CAR } from '../config';
 import { clamp, damp, lerp, lerpAngle } from '../utils/math';
-import { VEHICLE_TYPES } from './vehicleTypes';
+import { VehicleModel } from './VehicleModel';
 import type { Drivable } from './Drivable';
 import type { CharacterView } from '../player/CharacterView';
 
 const H = CAR.half;
 const GROUND_OFFSET = CAR.clearance + H.y;
 const DOWN = { x: 0, y: -1, z: 0 };
-
-/** Greybox Sitara Pari built from the shared hatchback layout, with steerable/spinning wheels. */
-class CarModel {
-  readonly root = new THREE.Group();
-  readonly body = new THREE.Group();
-  readonly wheels: { pivot: THREE.Group; spin: THREE.Group; front: boolean }[] = [];
-  readonly seat = new THREE.Group();
-
-  constructor(color: string) {
-    const type = VEHICLE_TYPES.hatch;
-    const mats = {
-      body: new THREE.MeshLambertMaterial({ color }),
-      roof: new THREE.MeshLambertMaterial({ color }),
-      cabin: new THREE.MeshLambertMaterial({ color: type.cabinColor }),
-      headlight: new THREE.MeshBasicMaterial({ color: '#fff6d8' }),
-      taillight: new THREE.MeshBasicMaterial({ color: '#d32f2f' }),
-    };
-    this.root.add(this.body);
-    const tire = new THREE.MeshLambertMaterial({ color: '#161616' });
-    const rim = new THREE.MeshLambertMaterial({ color: '#b9bec4' });
-    for (const p of type.parts) {
-      if (p.part === 'wheel') {
-        const pivot = new THREE.Group();
-        pivot.position.set(p.x, p.y, p.z);
-        const spin = new THREE.Group();
-        pivot.add(spin);
-        const t = new THREE.Mesh(new THREE.CylinderGeometry(p.sy / 2, p.sy / 2, p.sx, 14).rotateZ(Math.PI / 2), tire);
-        const r = new THREE.Mesh(new THREE.CylinderGeometry(p.sy / 3.2, p.sy / 3.2, p.sx + 0.02, 8).rotateZ(Math.PI / 2), rim);
-        t.castShadow = true;
-        spin.add(t, r);
-        this.root.add(pivot);
-        this.wheels.push({ pivot, spin, front: p.z > 0 });
-        continue;
-      }
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(p.sx, p.sy, p.sz), mats[p.part]);
-      mesh.position.set(p.x, p.y, p.z);
-      mesh.castShadow = p.part === 'body' || p.part === 'cabin';
-      this.body.add(mesh);
-    }
-    // bumpers + number plates for a bit of character
-    const dark = new THREE.MeshLambertMaterial({ color: '#2a2a2a' });
-    const plate = new THREE.MeshLambertMaterial({ color: '#f4f4f4' });
-    for (const z of [1.9, -1.9]) {
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.18, 0.12), dark);
-      b.position.set(0, 0.36, z);
-      const pl = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.02), plate);
-      pl.position.set(0, 0.5, z + Math.sign(z) * 0.02);
-      this.body.add(b, pl);
-    }
-    this.seat.position.set(-0.38, 0.1, -0.1); // right-hand drive: driver sits on the car's right (-x)
-    this.body.add(this.seat);
-  }
-}
 
 /**
  * Arcade car: velocity with separate forward/lateral components, so lowering
@@ -77,7 +24,8 @@ export class CarController implements Drivable {
   readonly halfLength = H.z;
   readonly body: RAPIER.RigidBody;
   readonly collider: RAPIER.Collider;
-  private model = new CarModel(CAR.color);
+  private model = new VehicleModel('hatch', CAR.color);
+  available = true;
 
   heading: number;
   speed = 0; // forward component, m/s
@@ -116,6 +64,22 @@ export class CarController implements Drivable {
   get position() { return this.curr; }
   get visualPosition() { return this.model.root.position; }
   get kmh() { return Math.abs(this.speed) * 3.6; }
+
+  teleport(pos: THREE.Vector3, heading: number) {
+    this.curr.set(pos.x, pos.y + GROUND_OFFSET, pos.z);
+    this.prev.copy(this.curr);
+    this.heading = this.prevHeading = heading;
+    this.speed = this.lateral = 0;
+    this.body.setTranslation(this.curr, true);
+    this.body.setRotation(this.quat.setFromAxisAngle(this.up, heading), true);
+    this.render(1, 0);
+  }
+
+  setAvailable(available: boolean) {
+    this.available = available;
+    this.model.root.visible = available;
+    this.collider.setEnabled(available);
+  }
 
   seat(rig: CharacterView) {
     this.model.seat.add(rig.root);

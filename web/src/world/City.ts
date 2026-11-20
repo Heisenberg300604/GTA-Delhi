@@ -4,7 +4,7 @@ import { Rng } from '../utils/random';
 import { WORLD_SEED } from '../config';
 import { MeshBuilder, InstanceBatch } from './MeshBuilder';
 import {
-  MAP_HALF, SIDEWALK, KERB, ROADS, SPAWN, computeBlocks, crossings, inCrossing, roadPoint,
+  MAP_HALF, SIDEWALK, KERB, ROADS, SPAWN, LANDMARKS, computeBlocks, crossings, inCrossing, inClearZone, roadPoint,
   type Block, type Road,
 } from './cityLayout';
 import {
@@ -73,6 +73,8 @@ export class City {
     }
     this.buildParkedVehicles();
     this.buildChaiStall();
+    this.buildBakery();
+    this.buildHome();
     this.buildBoundary();
     this.buildSkyline();
     this.assemble();
@@ -241,10 +243,11 @@ export class City {
       if (!this.rng.chance(0.85)) continue;
       const sw = Math.min(seg - 0.5, 3.4);
       const t = (s + 0.5) * seg;
+      if (inClearZone(f.sx + rx * t, f.sz + rz * t)) continue;
       const cx = f.sx + rx * t + f.nx * 0.07, cz = f.sz + rz * t + f.nz * 0.07;
       const y0 = 2.95, y1 = 4.0;
       const hx = rx * sw / 2, hz = rz * sw / 2;
-      const idx = 1 + Math.floor(rng.next() * (this.atlas.count - 1));
+      const idx = 2 + Math.floor(rng.next() * (this.atlas.count - 2)); // 0, 1 are story signs
       this.signs.quad(
         [cx - hx, y0, cz - hz], [cx + hx, y0, cz + hz], [cx + hx, y1, cz + hz], [cx - hx, y1, cz - hz],
         this.atlas.uv(idx), col('#ffffff'),
@@ -469,7 +472,7 @@ export class City {
         if (inCrossing(road, t, 6)) continue;
         const side = rng.chance(0.5) ? -1 : 1;
         const p = roadPoint(road, t, side * (half - 1.15));
-        if (Math.hypot(p.x - SPAWN.car.x, p.z - SPAWN.car.z) < 7) continue; // keep the family car's spot free
+        if (inClearZone(p.x, p.z)) continue;
         const yaw = road.axis === 'x' ? Math.PI / 2 + (rng.chance(0.5) ? 0 : Math.PI) : rng.chance(0.5) ? 0 : Math.PI;
         this.parkedCar(p.x, p.z, yaw);
       }
@@ -481,7 +484,8 @@ export class City {
         const count = rng.int(3, 7);
         const len = count * 0.85;
         if (inCrossing(main, t, 6) || inCrossing(main, t + len, 6)) continue;
-        if (side > 0 && t + len > -38 && t < -22) continue; // keep the chai stall clear
+        const a = roadPoint(main, t, side * 9.1), b = roadPoint(main, t + len, side * 9.1);
+        if (inClearZone(a.x, a.z, 1) || inClearZone(b.x, b.z, 1)) continue;
         for (let i = 0; i < count; i++) {
           const p = roadPoint(main, t + i * 0.85, side * (main.width / 2 + 1.1));
           const c = rng.pick(SCOOTER_COLORS);
@@ -516,6 +520,34 @@ export class City {
     this.signs.quad([x + 1.25, y0, sz], [x - 1.25, y0, sz], [x - 1.25, y1, sz], [x + 1.25, y1, sz], uv, col('#ffffff'));
     this.physics.addStaticBox(x, y + 0.6, z + 0.2, 1.35, 0.6, 0.6);
     this.physics.addStaticBox(x + 2.9, y + 0.25, z + 0.5, 0.8, 0.25, 0.25);
+  }
+
+  /** Sweet Pinch Bakery (M1): big sign, glass display counter, cake boxes. */
+  private buildBakery() {
+    const { x, z } = LANDMARKS.bakery;
+    const y = KERB;
+    const fz = z + 0.09;
+    this.signs.quad([x - 2.2, 2.85, fz], [x + 2.2, 2.85, fz], [x + 2.2, 4.0, fz], [x - 2.2, 4.0, fz], this.atlas.uv(1), col('#ffffff'));
+    this.decor.add(x, 2.75 - Math.sin(0.3) * 0.75, z + 0.75, 4.4, 0.05, 1.5, col('#f06292'), 0, 0.3);
+    this.decor.add(x, y + 0.5, z + 1.0, 2.4, 1.0, 0.7, col('#f3e5f5')); // display counter
+    this.decor.add(x, y + 1.02, z + 1.0, 2.45, 0.05, 0.75, col('#9ec9d9')); // glass top
+    for (let i = 0; i < 4; i++) this.decor.add(x - 0.9 + i * 0.6, y + 1.18, z + 0.95, 0.38, 0.26, 0.38, col(i % 2 ? '#fce4ec' : '#ffffff'));
+    this.physics.addStaticBox(x, y + 0.55, z + 1.0, 1.25, 0.55, 0.4);
+  }
+
+  /** Sethi family home (M1): door, nameplate, birthday balloons. */
+  private buildHome() {
+    const { x, z } = LANDMARKS.home;
+    const y = KERB;
+    this.decor.add(x - 0.06, y + 1.15, z, 0.12, 2.3, 1.3, col('#5d3a1f')); // door
+    this.decor.add(x - 0.1, y + 2.45, z, 0.1, 0.25, 1.6, col('#3e2a18')); // lintel
+    this.decor.add(x - 0.12, y + 1.6, z + 1.0, 0.04, 0.22, 0.5, col('#f5d3a3')); // nameplate
+    this.decor.add(x - 0.4, y + 0.08, z, 0.8, 0.16, 1.6, col('#9e9e9e')); // step
+    const balloon = ['#e53935', '#fdd835', '#1e88e5', '#ec407a', '#43a047', '#ff7043'];
+    balloon.forEach((c, i) => {
+      const side = i % 2 ? 1 : -1;
+      this.canopies.add(x - 0.3, y + 2.3 + (i % 3) * 0.28, z + side * (0.85 + (i % 3) * 0.12), 0.45, 0.55, 0.45, col(c), i);
+    });
   }
 
   // ---------------------------------------------------------------- edges

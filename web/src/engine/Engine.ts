@@ -16,7 +16,7 @@ export class Engine {
   private accumulator = 0;
   private last = 0;
   private loop?: GameLoop;
-  /** Set by the game: called after each simulated tick batch (e.g. to clear latched input). */
+  /** Set by the game: called at the end of every frame with the number of physics ticks run (clears latched input). */
   onTicksDone?: (ticks: number) => void;
 
   constructor(container: HTMLElement, quality: Quality) {
@@ -63,9 +63,10 @@ export class Engine {
       ticks++;
     }
     if (ticks === 5) this.accumulator = 0; // avoid spiral of death after a stall
-    this.onTicksDone?.(ticks);
 
     loop.update(dt, this.accumulator / FIXED_DT);
+    // after both simulation and UI had their chance to read key presses
+    this.onTicksDone?.(ticks);
     this.renderer.render(this.scene, this.camera);
   }
 }

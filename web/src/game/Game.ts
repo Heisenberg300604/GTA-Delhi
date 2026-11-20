@@ -5,41 +5,62 @@ import { AudioSystem } from '../engine/Audio';
 import { Physics } from '../physics/Physics';
 import { City } from '../world/City';
 import { Environment } from '../world/Environment';
-import { SPAWN, KERB } from '../world/cityLayout';
+import { Marker } from '../world/Marker';
+import { SPAWN, KERB, LANDMARKS } from '../world/cityLayout';
 import { PlayerController } from '../player/PlayerController';
 import { BikeController } from '../vehicles/BikeController';
 import { CarController } from '../vehicles/CarController';
 import type { Drivable } from '../vehicles/Drivable';
 import { CameraController } from '../camera/CameraController';
 import { Hud } from '../ui/Hud';
+import { DialogueBox } from '../ui/DialogueBox';
+import { Minimap } from '../ui/Minimap';
 import { DebugOverlay } from '../debug/DebugOverlay';
 import { QUALITY_PRESETS } from '../config';
 import { Crowd } from '../ai/Crowd';
 import { Traffic, type Obstacle } from '../ai/Traffic';
 import { clamp } from '../utils/math';
 import { AnimatedCharacter, loadCharacterTemplate } from '../player/AnimatedCharacter';
+import { SaveManager } from '../save/SaveManager';
+import { MissionManager } from '../story/MissionManager';
+import type { StoryHost, Interaction } from '../story/StoryHost';
+import { CAST } from '../story/cast';
+import { MISSIONS } from '../story/missions/m01_birthday';
 
-/** Wires the systems together and owns the on-foot ↔ vehicle state machine. */
-export class Game implements GameLoop {
+/** Wires the systems together, owns the on-foot ↔ vehicle state machine and hosts the story. */
+export class Game implements GameLoop, StoryHost {
   /** null = on foot. */
-  private vehicle: Drivable | null = null;
-  private input: Input;
-  private audio = new AudioSystem();
+  private current: Drivable | null = null;
+  readonly input: Input;
+  readonly audio = new AudioSystem();
+  readonly save = new SaveManager();
+  readonly scene: THREE.Scene;
+  readonly hud: Hud;
+  readonly dialogue: DialogueBox;
+  readonly marker: Marker;
+  readonly camera: CameraController;
+  readonly player: PlayerController;
+  readonly bike: BikeController;
+  readonly car: CarController;
+  interaction: Interaction | null = null;
+  readonly hasCharacterModels: boolean;
+
   private env: Environment;
-  private player: PlayerController;
-  private bike: BikeController;
-  private car: CarController;
   private vehicles: Drivable[];
-  private cam: CameraController;
   private crowd: Crowd;
   private traffic: Traffic;
-  private hud: Hud;
+  private minimap: Minimap;
   private debug: DebugOverlay;
+  private missions: MissionManager;
+  private npcs = new Map<string, AnimatedCharacter>();
   private lastImpact = 0;
   private obstacles: Obstacle[] = [];
+  private storyStarted = false;
 
   private constructor(private readonly engine: Engine, private readonly physics: Physics, ui: HTMLElement, hasModel: boolean) {
-    const scene = engine.scene;
+    this.scene = engine.scene;
+    this.hasCharacterModels = hasModel;
+    const scene = this.scene;
     const preset = QUALITY_PRESETS[engine.quality];
     this.input = new Input(engine.canvas);
     this.env = new Environment(scene, engine.renderer, engine.quality);
@@ -47,20 +68,34 @@ export class Game implements GameLoop {
 
     this.player = new PlayerController(
       scene, physics, new THREE.Vector3(SPAWN.player.x, KERB, SPAWN.player.z), SPAWN.player.facing,
-      hasModel ? new AnimatedCharacter() : undefined,
+      hasModel ? new AnimatedCharacter(CAST.aryan.palette) : undefined,
     );
     this.bike = new BikeController(scene, physics, new THREE.Vector3(SPAWN.bike.x, 0, SPAWN.bike.z), SPAWN.bike.heading);
     this.car = new CarController(scene, physics, new THREE.Vector3(SPAWN.car.x, 0, SPAWN.car.z), SPAWN.car.heading);
     this.vehicles = [this.bike, this.car];
-    this.cam = new CameraController(engine.camera, physics, SPAWN.cameraYaw, () => []);
+    this.camera = new CameraController(engine.camera, physics, SPAWN.cameraYaw, () => []);
     this.crowd = new Crowd(scene, physics, preset.pedestrians, this.player.position, preset.nearPedestrians);
     this.traffic = new Traffic(scene, physics, preset.traffic, this.player.position);
+    this.marker = new Marker(scene);
+    this.spawnStoryNpcs();
 
-    this.hud = new Hud(ui, () => this.start());
+    this.hud = new Hud(ui, () => this.beginPlay());
+    this.minimap = new Minimap(ui.querySelector('.hud') as HTMLElement);
+    this.dialogue = new DialogueBox(ui.querySelector('.hud') as HTMLElement);
     this.debug = new DebugOverlay(ui);
     this.crowd.onBark = (text) => this.hud.showBark(text);
     this.traffic.onHonk = (x, z, atPlayer) => this.honkAt(x, z, atPlayer);
+    this.missions = new MissionManager(this, MISSIONS);
+
+    this.hud.setTitleProgress(this.save.hasProgress);
+    this.applyWorldState();
     document.addEventListener('pointerlockchange', () => this.hud.showOverlay(!this.input.pointerLocked));
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyN' && !this.input.pointerLocked && !this.storyStarted) {
+        this.save.reset();
+        location.reload();
+      }
+    });
     engine.onTicksDone = (ticks) => {
       if (ticks > 0) this.input.clearLatched();
     };
@@ -74,33 +109,85 @@ export class Game implements GameLoop {
     return new Game(engine, physics, ui, hasModel);
   }
 
-  private start() {
+  /** Title-screen click: grab the mouse, unlock audio, start or resume the story. */
+  beginPlay() {
     this.audio.unlock();
     this.input.requestPointerLock();
+    if (!this.storyStarted) {
+      this.storyStarted = true;
+      this.missions.startNext();
+    }
   }
 
-  /** Where the player effectively is (on foot or in a vehicle). */
-  private get focus(): THREE.Vector3 {
-    return this.vehicle ? this.vehicle.position : this.player.position;
+  private spawnStoryNpcs() {
+    if (!this.hasCharacterModels) return;
+    const place = (id: keyof typeof CAST, x: number, z: number, facing: number, clip?: string) => {
+      const a = new AnimatedCharacter(CAST[id].palette);
+      a.root.position.set(x, KERB, z);
+      a.root.rotation.y = facing;
+      if (clip) a.setAction(clip);
+      this.scene.add(a.root);
+      this.npcs.set(id, a);
+    };
+    place('ramesh', LANDMARKS.chaiStall.x - 1.75, LANDMARKS.chaiStall.z + 0.35, Math.PI);
+    place('baker', LANDMARKS.bakery.x, LANDMARKS.bakery.z + 0.3, 0);
+  }
+
+  /** Persistent consequences of finished missions. */
+  private applyWorldState() {
+    const s = this.save.data;
+    this.car.setAvailable(!s.flags.carSeized);
+    this.hud.setDebt(s.debt, s.debtRevealed);
+    this.hud.setWallet(s.money);
+  }
+
+  // ------------------------------------------------------------ StoryHost
+
+  vehicle(): Drivable | null {
+    return this.current;
+  }
+
+  focus(): THREE.Vector3 {
+    return this.current ? this.current.position : this.player.position;
+  }
+
+  forceExit() {
+    if (this.current) this.exitVehicle(this.current, this.current.exitPoints()[0]);
+  }
+
+  setControlsLocked(locked: boolean) {
+    this.input.locked = locked;
+  }
+
+  setCrowdExclusion(zone: { x: number; z: number; r: number } | null) {
+    this.crowd.exclusion = zone;
+  }
+
+  npc(id: string) {
+    return this.npcs.get(id);
   }
 
   // ------------------------------------------------------------ simulation
 
   fixedUpdate(dt: number) {
     if (this.input.consume('KeyF')) {
-      if (this.vehicle) this.tryExit();
+      if (this.current) this.tryExit();
       else {
         const v = this.nearestVehicle();
         if (v) this.enter(v);
       }
     }
-    if (!this.vehicle && this.input.consume('Mouse0')) this.player.rig.punch?.();
-    this.player.fixedUpdate(dt, this.input, this.cam.yaw);
-    for (const v of this.vehicles) v.fixedUpdate(dt, v === this.vehicle ? this.input : null);
+    if (this.interaction && !this.current && this.input.consume('KeyE')) {
+      const it = this.interaction;
+      if (Math.hypot(this.player.position.x - it.x, this.player.position.z - it.z) < it.radius) it.triggered = true;
+    }
+    if (!this.current && this.dialogue.done && this.input.consume('Mouse0')) this.player.rig.punch?.();
+    this.player.fixedUpdate(dt, this.input, this.camera.yaw);
+    for (const v of this.vehicles) v.fixedUpdate(dt, v === this.current ? this.input : null);
 
-    const active = this.vehicle;
+    const active = this.current;
     this.crowd.fixedUpdate(dt, {
-      playerPos: this.focus,
+      playerPos: this.focus(),
       playerOnFoot: !active,
       bikePos: active ? active.position : this.bike.position,
       bikeHeading: active ? active.heading : this.bike.heading,
@@ -112,9 +199,10 @@ export class Game implements GameLoop {
     this.obstacles.length = 0;
     if (!active) this.obstacles.push({ x: this.player.position.x, z: this.player.position.z, halfLen: 0.4, isPlayer: true });
     for (const v of this.vehicles) {
+      if (!v.available) continue;
       this.obstacles.push({ x: v.position.x, z: v.position.z, halfLen: v.halfLength, isPlayer: v === active });
     }
-    this.traffic.fixedUpdate(dt, { near: this.focus, obstacles: this.obstacles, camera: this.engine.camera });
+    this.traffic.fixedUpdate(dt, { near: this.focus(), obstacles: this.obstacles, camera: this.engine.camera });
     this.physics.step(dt);
   }
 
@@ -122,6 +210,7 @@ export class Game implements GameLoop {
     let best: Drivable | null = null;
     let bestD = Infinity;
     for (const v of this.vehicles) {
+      if (!v.available) continue;
       const d = Math.hypot(v.position.x - this.player.position.x, v.position.z - this.player.position.z);
       if (d < v.mountDistance && d < bestD) {
         best = v;
@@ -132,19 +221,18 @@ export class Game implements GameLoop {
   }
 
   private enter(v: Drivable) {
-    this.vehicle = v;
+    this.current = v;
     this.player.setActive(false);
     v.seat(this.player.rig);
     this.hud.showToast(v.kind === 'bike' ? `${v.name} · chal, nikal!` : `${v.name} · Papa ki gaadi. Dhyaan se.`);
   }
 
   private tryExit() {
-    const v = this.vehicle!;
+    const v = this.current!;
     if (v.kmh / 3.6 > v.exitMaxSpeed) {
       this.hud.showToast('Slow down to get out');
       return;
     }
-    // first exit point with a clear line from the vehicle centre
     const from = { x: v.position.x, y: v.position.y + 0.3, z: v.position.z };
     const spot =
       v.exitPoints().find((p) => {
@@ -152,11 +240,15 @@ export class Game implements GameLoop {
         const d = Math.hypot(dx, dz);
         return this.physics.castRay(from, { x: dx / d, y: 0, z: dz / d }, d + 0.4, (c) => c !== v.collider) === null;
       }) ?? v.exitPoints()[0];
+    this.exitVehicle(v, spot);
+  }
+
+  private exitVehicle(v: Drivable, spot: THREE.Vector3) {
     v.unseat(this.player.rig);
     this.player.root.add(this.player.rig.root);
     this.player.teleport(spot, v.heading);
     this.player.setActive(true);
-    this.vehicle = null;
+    this.current = null;
   }
 
   private honkAt(x: number, z: number, atPlayer: boolean) {
@@ -167,7 +259,7 @@ export class Game implements GameLoop {
     const pan = d > 0.1 ? (dx * right.x + dz * right.z) / d : 0;
     const vol = (atPlayer ? 0.14 : 0.08) * clamp(1 - d / 90, 0, 1);
     this.audio.playHorn(vol, pan * 0.8, 3200 - Math.min(d, 80) * 25);
-    if (atPlayer && d < 25 && Math.random() < 0.35) {
+    if (atPlayer && d < 25 && Math.random() < 0.35 && this.dialogue.done) {
       this.hud.showBark(Math.random() < 0.5 ? 'Abe hatt! Raasta chhod!' : 'Bhai, gaadi hata le yaar!');
     }
   }
@@ -175,29 +267,39 @@ export class Game implements GameLoop {
   // ------------------------------------------------------------ frame
 
   update(dt: number, alpha: number) {
-    const v = this.vehicle;
+    const v = this.current;
+    this.missions.tick(dt);
+    this.dialogue.update(dt, this.input);
+
     this.player.render(alpha, dt);
     for (const veh of this.vehicles) veh.render(alpha, dt);
     if (v) this.player.rig.update(dt, 0);
+    for (const n of this.npcs.values()) n.update(dt, 0);
 
     const target = v
       ? { position: v.visualPosition, mode: v.kind, heading: v.heading, speed: v.speed, shake: v.impact }
       : { position: this.player.visualPosition, mode: 'foot' as const };
-    this.cam.update(dt, this.input, target);
+    this.camera.update(dt, this.input, target);
     this.crowd.render(alpha, dt, this.engine.camera.position);
     this.traffic.render(alpha);
+    this.marker.update(dt);
     this.env.update(this.engine.camera.position, target.position);
 
     // HUD
-    if (!v) {
+    const locked = this.input.locked;
+    if (locked) this.hud.setPrompt(null);
+    else if (!v) {
+      const it = this.interaction;
+      const nearIt = it && Math.hypot(this.player.position.x - it.x, this.player.position.z - it.z) < it.radius;
       const near = this.nearestVehicle();
-      this.hud.setPrompt(near ? `F — ${near.kind === 'bike' ? 'ride' : 'drive'} the ${near.name}` : null);
-      this.hud.setSpeed(null);
+      this.hud.setPrompt(nearIt ? `E — ${it!.label}` : near ? `F — ${near.kind === 'bike' ? 'ride' : 'drive'} the ${near.name}` : null);
     } else {
       this.hud.setPrompt(v.kmh < 3 ? `F — get ${v.kind === 'bike' ? 'off' : 'out'}` : null);
-      this.hud.setSpeed(v.kmh, v.name);
     }
+    this.hud.setSpeed(v && !locked ? v.kmh : null, v?.name);
     this.hud.update(dt);
+    const f = this.focus();
+    this.minimap.draw(f.x, f.z, v ? v.heading : this.player.facing, this.camera.yaw, this.marker.position);
 
     // audio
     this.audio.setEngine(!!v, v ? v.speed : 0, v ? v.throttle : 0, v?.kind === 'car' ? 0.7 : 1);
@@ -208,12 +310,13 @@ export class Game implements GameLoop {
       this.lastImpact = performance.now();
     }
 
-    const p = this.focus;
+    const m = this.missions.running;
     this.debug.update(dt, this.engine.renderer, {
       state: v ? `${v.kind} ${v.kmh.toFixed(0)} km/h` : `on foot ${this.player.grounded ? 'grounded' : 'airborne'}`,
-      pos: `${p.x.toFixed(1)}, ${p.y.toFixed(1)}, ${p.z.toFixed(1)}`,
+      pos: `${f.x.toFixed(1)}, ${f.y.toFixed(1)}, ${f.z.toFixed(1)}`,
       quality: this.engine.quality,
       npcs: `${this.crowd.count} people · ${this.traffic.count} vehicles`,
+      mission: m ? `${m.id} · stage ${this.save.data.current?.stage ?? '-'}` : 'free roam',
     });
     this.input.endFrame();
   }

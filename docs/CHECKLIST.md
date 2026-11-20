@@ -34,10 +34,22 @@
 - [x] Car (Sitara Pari): arcade handling with handbrake drift, body pitch/roll, steerable wheels, enter/exit (right-hand drive)
 - [ ] Vehicle damage (basic)
 
-## Phase 4 — First mission
-- [ ] Mission manager, dialogue system, cutscene timeline player
-- [ ] Phone UI, markers, Hisaab counter changes, checkpoint save
-- [ ] M1 "Happy Birthday, Pihu" playable
+## Phase 4 — First mission ✅
+- [x] Mission runtime: missions are async "screenplay" scripts (`say`, `choose`, `shot`, `walk`, `drive`, `objective`, `interact`), stages with checkpoints
+- [x] Cutscenes: letterbox, camera cuts and glides, actors from the cast, prop vehicles, hold Enter to skip, crowd cleared from the scene
+- [x] Dialogue box: Hinglish + English subtitle, typewriter, choices (1/2/3), phone-call style
+- [x] HUD: objective line, 3D beam marker, rotating minimap, cake meter, wallet, debt reveal, MISSION PASSED stamp, fades
+- [x] Save system (localStorage, versioned): money, debt, flags, completed missions, mid-mission checkpoints; N on the title for a new game
+- [x] Story NPCs in the world: Ramesh at the chai stall, Sweety Aunty at Sweet Pinch Bakery
+- [x] M1 "Happy Birthday, Pihu" playable end to end (flavour choice, cake condition changes Pihu's line, family car seized, ₹14 lakh reveal)
+- [x] Automated M1 playthrough test (`npm run test:m01`, 18 checks)
+- [ ] Phone UI (contacts/messages screen): texts currently arrive as phone-style dialogue
+- [ ] Portraits for dialogue (2D illustrated faces)
+
+## Phase 5 — next up
+- [ ] M2 "Shareef Driving" (Lucky, law-abiding driving + suspicion meter, police checkpoint) — needs Majnu Ka Tila pocket
+- [ ] Traffic signals + police "challan" (Heat 1)
+- [ ] Melee combat (punch/kick damage, hit reactions) — needs Mixamo files from YOUR_TASKS.md
 
 ## Phase 5+
 See GDD §23 (story systems, melee/knife/pistol, police heat, more missions, districts, AK-47, release).

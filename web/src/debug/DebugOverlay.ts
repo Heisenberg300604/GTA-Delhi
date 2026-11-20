@@ -6,12 +6,13 @@ export class DebugOverlay {
   private frames = 0;
   private time = 0;
   private worst = 0;
-  visible = true;
+  visible = import.meta.env.DEV; // F3 toggles; hidden by default in production builds
 
   constructor(parent: HTMLElement) {
     this.el = document.createElement('pre');
     this.el.className = 'debug';
     parent.appendChild(this.el);
+    this.el.style.display = this.visible ? 'block' : 'none';
     window.addEventListener('keydown', (e) => {
       if (e.code === 'F3' || e.code === 'Backquote') {
         e.preventDefault();

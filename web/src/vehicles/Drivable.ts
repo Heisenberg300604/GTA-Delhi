@@ -20,6 +20,10 @@ export interface Drivable {
   readonly impact: number;
   readonly throttle: number;
   readonly halfLength: number;
+  /** False while story-locked (e.g. the family car after it's seized in M1). */
+  readonly available: boolean;
+  teleport(pos: THREE.Vector3, heading: number): void;
+  setAvailable(available: boolean): void;
   fixedUpdate(dt: number, input: Input | null): void;
   render(alpha: number, dt: number): void;
   seat(rig: CharacterView): void;

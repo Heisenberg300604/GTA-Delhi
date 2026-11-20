@@ -14,7 +14,9 @@ description: Launch the RING ROAD web game, run the headless gameplay smoke test
    prints PASS/FAIL lines plus the F3 stats (FPS, draw calls, triangles), and fails on any console error.
 4. Read the PNG screenshots in the output folder and check them visually (spawn, on bike, riding, final).
 5. Compare stats with the GDD §22 budgets (draw calls ≤150 low / ≤400 high).
-6. When adding a feature, add a check for it to `web/scripts/smoke.mjs`.
+6. Story changes: also run `node scripts/mission-m01.mjs <scratchpad>/m1` (full M1 playthrough; screenshots are taken per speaker).
+   New missions get their own `scripts/mission-mXX.mjs` in the same style.
+7. When adding a feature, add a check for it to `web/scripts/smoke.mjs`.
 
 ## Probing internals
 `window.__game` is exposed in the page. One-off probes (e.g. tracing a controller per tick) can be written as

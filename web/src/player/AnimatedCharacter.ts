@@ -104,6 +104,8 @@ export class AnimatedCharacter implements CharacterView {
   private current: THREE.AnimationAction | null = null;
   private pose: Pose = 'ground';
   private oneShot = 0;
+  /** Clip forced by a script (cutscene actors), overriding locomotion. */
+  private scripted: string | null = null;
   private bones = new Map<string, THREE.Bone>();
   private texture: THREE.CanvasTexture;
   private tmpQ = new THREE.Quaternion();
@@ -178,6 +180,12 @@ export class AnimatedCharacter implements CharacterView {
     if (pose === 'ride') this.play('Idle', 0);
   }
 
+  /** Force a clip (e.g. 'Working' for the chaiwala); null returns to locomotion. */
+  setAction(name: string | null, timeScale = 1) {
+    this.scripted = name;
+    if (name) this.play(name, 0.25, timeScale);
+  }
+
   punch() {
     if (this.pose !== 'ground' || this.oneShot > 0) return;
     this.oneShot = 1;
@@ -185,7 +193,7 @@ export class AnimatedCharacter implements CharacterView {
   }
 
   update(dt: number, speed: number) {
-    if (this.pose === 'ground' && this.oneShot === 0) {
+    if (this.pose === 'ground' && this.oneShot === 0 && !this.scripted) {
       if (speed < 0.2) this.play('Idle', 0.25);
       else if (speed < 4.2) this.play('Walk', 0.2, THREE.MathUtils.clamp(speed / 1.9, 0.6, 1.7));
       else this.play('Run', 0.2, THREE.MathUtils.clamp(speed / 6, 0.75, 1.4));

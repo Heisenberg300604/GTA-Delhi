@@ -1,6 +1,6 @@
 # Project Dilli — "RING ROAD"
 
-An original, Delhi-inspired open-world browser game. **Source of truth: [docs/GDD.md](docs/GDD.md).** Progress: [docs/CHECKLIST.md](docs/CHECKLIST.md).
+An original, Delhi-inspired open-world browser game. **Source of truth: [docs/GDD.md](docs/GDD.md).** Progress: [docs/CHECKLIST.md](docs/CHECKLIST.md). The user's own to-do list: [docs/YOUR_TASKS.md](docs/YOUR_TASKS.md).
 
 ## Rules
 - Everything is original: no GTA names, logos, characters, missions, maps, music or code. No real brands, colleges, gangs or people. The title in-game is RING ROAD (codename Project Dilli).
@@ -15,10 +15,12 @@ An original, Delhi-inspired open-world browser game. **Source of truth: [docs/GD
 - `web/`: the game (Vite + TypeScript + Three.js + Rapier).
   - `src/engine` loop/input/audio · `src/physics` Rapier wrapper · `src/world` procedural city + layout data
   - `src/player` on-foot controller + rig · `src/vehicles` bike · `src/camera` · `src/ui` HUD · `src/debug`
-  - `scripts/smoke.mjs`: headless gameplay test (uses installed Google Chrome via playwright-core)
+  - `src/story`: mission runtime (`MissionContext` primitives, `MissionManager`), cast, `missions/*` scripts
+  - `src/save`: versioned localStorage save
+  - `scripts/smoke.mjs`: headless gameplay test · `scripts/mission-m01.mjs`: full M1 playthrough (both use installed Chrome via playwright-core)
 - `tools/blender/`: headless Blender Python scripts for asset generation/conversion
 - `assets-src/`: source files (FBX/.blend); exported GLBs go to `web/public/assets/`
 
 ## Commands (run in `web/`)
-- `npm run dev` (port 5173) · `npm run typecheck` · `npm run build` · `npm run smoke` (needs the dev server running)
+- `npm run dev` (port 5173) · `npm run typecheck` · `npm run build` · `npm run smoke` · `npm run test:m01` (tests need the dev server running)
 - Quality presets: `?q=low|medium|high`. F3 toggles stats.

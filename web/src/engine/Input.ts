@@ -8,6 +8,8 @@ export class Input {
   mouseDX = 0;
   mouseDY = 0;
   pointerLocked = false;
+  /** When true, gameplay queries return nothing (cutscenes). UI uses the *UI variants. */
+  locked = false;
 
   constructor(private readonly target: HTMLElement) {
     window.addEventListener('keydown', (e) => {
@@ -36,11 +38,12 @@ export class Input {
   }
 
   down(code: string): boolean {
-    return this.held.has(code);
+    return !this.locked && this.held.has(code);
   }
 
   /** -1..1 from two keys (with arrow-key alternates). */
   axis(neg: string[], pos: string[]): number {
+    if (this.locked) return 0;
     let v = 0;
     if (neg.some((k) => this.held.has(k))) v -= 1;
     if (pos.some((k) => this.held.has(k))) v += 1;
@@ -49,9 +52,20 @@ export class Input {
 
   /** True once per physical key press. */
   consume(code: string): boolean {
+    if (this.locked || !this.latched.has(code)) return false;
+    this.latched.delete(code);
+    return true;
+  }
+
+  /** UI input that works even while gameplay is locked. */
+  consumeUI(code: string): boolean {
     if (!this.latched.has(code)) return false;
     this.latched.delete(code);
     return true;
+  }
+
+  downUI(code: string): boolean {
+    return this.held.has(code);
   }
 
   clearLatched() {

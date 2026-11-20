@@ -25,7 +25,7 @@ canvas { display: block; }
 .hud-hisaab .amount { font: 400 28px Anton, Impact, sans-serif; letter-spacing: 0.04em; }
 
 .hud-help {
-  position: absolute; bottom: 14px; left: 20px; font-size: 12px; color: #fffd;
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 12px; color: #fffd;
   background: #0007; padding: 6px 10px; border-radius: 4px;
 }
 .hud-help b { color: #f5c518; }
@@ -75,3 +75,61 @@ canvas { display: block; }
   font-weight: 600; font-size: 17px; text-shadow: 0 2px 4px #000, 0 0 2px #000; white-space: nowrap;
 }
 .hud-bark span { color: #f5c518; font-weight: 800; }
+
+.hud-hisaab.hidden { display: none; }
+.hud-wallet {
+  position: absolute; top: 96px; right: 24px; font: 400 24px Anton, Impact, sans-serif; color: #7bd389;
+  text-shadow: 0 2px 0 #000, 0 0 6px #000;
+}
+.hud-objective {
+  position: absolute; top: 64px; left: 50%; transform: translateX(-50%); max-width: 70vw; text-align: center;
+  font-weight: 800; font-size: 18px; text-shadow: 0 2px 4px #000, 0 0 2px #000; opacity: 0; transition: opacity 0.3s;
+}
+.hud-objective em { color: #f5c518; font-style: normal; }
+.hud-meter { position: absolute; top: 140px; right: 24px; width: 180px; opacity: 0; transition: opacity 0.3s; }
+.hud-meter .label { font: 800 11px Inter, sans-serif; letter-spacing: 0.15em; text-align: right; text-shadow: 0 1px 3px #000; }
+.hud-meter .bar { height: 10px; background: #0009; border: 2px solid #fff8; margin-top: 4px; }
+.hud-meter .fill { height: 100%; width: 100%; transition: width 0.2s, background 0.3s; }
+
+.minimap {
+  position: absolute; bottom: 18px; left: 18px; width: 200px; height: 200px; pointer-events: none;
+  filter: drop-shadow(0 4px 10px #0008);
+}
+
+.letterbox { position: absolute; left: 0; right: 0; height: 0; background: #000; transition: height 0.6s ease; z-index: 5; }
+.letterbox.top { top: 0; } .letterbox.bottom { bottom: 0; }
+.hud.cinematic .letterbox { height: 11vh; }
+.hud.cinematic .hud-help, .hud.cinematic .hud-title, .hud.cinematic .minimap, .hud.cinematic .hud-wallet,
+.hud.cinematic .hud-speedo, .hud.cinematic .hud-prompt, .hud.cinematic .hud-objective { opacity: 0 !important; }
+.hud-skip { position: absolute; bottom: 3vh; right: 24px; z-index: 6; font-size: 12px; color: #fff9; opacity: 0; }
+.hud-fade { position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity 0.5s; z-index: 7; }
+
+.dialogue {
+  position: absolute; bottom: 13vh; left: 50%; transform: translateX(-50%); width: min(820px, 86vw);
+  background: linear-gradient(180deg, #141b2df0, #0d1220f0); border-left: 5px solid #f2a33a; padding: 14px 20px 12px;
+  opacity: 0; transition: opacity 0.2s; z-index: 6; box-shadow: 0 8px 24px #0008;
+}
+.dialogue.phone { border-left-color: #7bd389; }
+.dialogue .who { font: 800 13px Inter, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; }
+.dialogue .text { font: 600 21px/1.35 Inter, 'Noto Sans Devanagari', sans-serif; margin-top: 4px; min-height: 28px; }
+.dialogue .en { font: italic 400 14px Inter, sans-serif; color: #fffa; margin-top: 4px; }
+.dialogue .hint { position: absolute; right: 12px; bottom: 6px; font-size: 10px; color: #fff6; }
+.dialogue .choices { margin-top: 6px; }
+.dialogue .choice { font: 700 17px Inter, sans-serif; padding: 6px 4px; }
+.dialogue .choice b { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; background: #f5c518; color: #141b2d; border-radius: 3px; margin-right: 10px; }
+.dialogue .choice span { display: block; margin-left: 34px; font: italic 400 13px Inter, sans-serif; color: #fff9; }
+
+.hud-splash { position: absolute; top: 28%; left: 50%; transform: translateX(-50%); text-align: center; opacity: 0; z-index: 8; }
+.hud-splash.show { animation: splash 4.5s ease forwards; }
+.hud-splash .stamp {
+  display: inline-block; font: 400 54px Anton, Impact, sans-serif; color: #b3261e; border: 6px solid #b3261e;
+  padding: 2px 22px; transform: rotate(-6deg); background: #f5ecd7e6; letter-spacing: 0.06em;
+}
+.hud-splash .title { font: 400 30px Anton, Impact, sans-serif; margin-top: 18px; text-shadow: 0 3px 0 #000; letter-spacing: 0.04em; }
+.hud-splash .sub { font-weight: 700; color: #7bd389; margin-top: 6px; text-shadow: 0 2px 3px #000; }
+@keyframes splash {
+  0% { opacity: 0; transform: translateX(-50%) scale(1.6); }
+  8% { opacity: 1; transform: translateX(-50%) scale(1); }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}

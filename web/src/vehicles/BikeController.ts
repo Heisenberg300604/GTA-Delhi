@@ -84,6 +84,25 @@ export class BikeController implements Drivable {
     return Math.abs(this.speed) * 3.6;
   }
 
+  available = true;
+
+  teleport(pos: THREE.Vector3, heading: number) {
+    this.curr.set(pos.x, pos.y + GROUND_OFFSET, pos.z);
+    this.prev.copy(this.curr);
+    this.heading = this.prevHeading = heading;
+    this.speed = 0;
+    this.vy = 0;
+    this.body.setTranslation(this.curr, true);
+    this.body.setRotation(this.quat.setFromAxisAngle(this.up, heading), true);
+    this.render(1, 0);
+  }
+
+  setAvailable(available: boolean) {
+    this.available = available;
+    this.model.root.visible = available;
+    this.collider.setEnabled(available);
+  }
+
   seat(rig: CharacterView) {
     this.model.riderMount.add(rig.root);
     rig.setPose('ride');

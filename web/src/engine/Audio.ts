@@ -75,6 +75,49 @@ export class AudioSystem {
     noise.start();
   }
 
+  /** Phone ringtone: three double-beeps. */
+  ring() {
+    if (!this.ctx || !this.master) return;
+    const ctx = this.ctx;
+    for (let r = 0; r < 3; r++) {
+      for (const [off, f] of [[0, 880], [0.18, 1046]] as const) {
+        const t = ctx.currentTime + r * 0.9 + off;
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.06, t + 0.02);
+        g.gain.linearRampToValueAtTime(0, t + 0.15);
+        o.connect(g).connect(this.master);
+        o.start(t);
+        o.stop(t + 0.16);
+      }
+    }
+  }
+
+  /** A car engine passing by (cutscenes). */
+  engineBy(seconds = 3) {
+    if (!this.ctx || !this.master) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const lp = ctx.createBiquadFilter();
+    const g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(55, t);
+    o.frequency.linearRampToValueAtTime(80, t + seconds * 0.5);
+    o.frequency.linearRampToValueAtTime(45, t + seconds);
+    lp.type = 'lowpass';
+    lp.frequency.value = 420;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.08, t + seconds * 0.4);
+    g.gain.linearRampToValueAtTime(0, t + seconds);
+    o.connect(lp).connect(g).connect(this.master);
+    o.start(t);
+    o.stop(t + seconds);
+  }
+
   /** Distant honking: Delhi's percussion section. busy: 0..1 traffic density near the player. */
   updateAmbient(dt: number, busy: number) {
     if (!this.ctx || !this.master) return;

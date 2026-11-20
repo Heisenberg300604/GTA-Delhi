@@ -25,7 +25,7 @@ await page.waitForTimeout(1500);
 const g = (fn) => page.evaluate(fn);
 const state = () => g(() => {
   const s = window.__game;
-  const v = s.vehicle;
+  const v = s.vehicle();
   const p = v ? v.position : s.player.position;
   return { state: v ? v.kind : 'foot', kmh: v ? +v.kmh.toFixed(1) : 0, x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2), grounded: s.player.grounded };
 });
@@ -87,9 +87,11 @@ const s5 = await state();
 check('bike accelerates', s5.kmh > 30, s5);
 await page.screenshot({ path: `${out}/03-riding.png` });
 
+const h0 = await g(() => window.__game.bike.heading);
 await page.keyboard.down('KeyW'); await hold('KeyA', 900); await page.keyboard.up('KeyW');
+const h1 = await g(() => window.__game.bike.heading);
+check('bike steers (heading changes)', Math.abs(h1 - h0) > 0.4, { turnedRad: +(h1 - h0).toFixed(2) });
 const s6 = await state();
-check('bike steers', Math.abs(s6.z - s5.z) > 1, { z0: s5.z, z1: s6.z });
 
 await page.keyboard.down('KeyS');
 let minKmh = Infinity;
@@ -129,7 +131,7 @@ check('exits the car', c3.state === 'foot', c3);
 await g(() => { const s = window.__game; const b = s.bike.position; s.player.teleport({ x: b.x + 1.2, y: 0, z: b.z }, 0); });
 await page.waitForTimeout(300);
 await page.keyboard.press('KeyF');
-await g(() => { const s = window.__game; s.cam.yaw = s.bike.heading + Math.PI; });
+await g(() => { const s = window.__game; s.camera.yaw = s.bike.heading + Math.PI; });
 await hold('KeyW', 6000);
 const s9 = await state();
 check('bike stays inside map / no tunnelling', Math.abs(s9.x) < 140 && Math.abs(s9.z) < 140 && s9.y > -1, s9);

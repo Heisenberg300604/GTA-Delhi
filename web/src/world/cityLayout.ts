@@ -99,6 +99,29 @@ export function roadHeading(road: Road, dir: 1 | -1): number {
   return road.axis === 'x' ? (dir > 0 ? Math.PI / 2 : -Math.PI / 2) : dir > 0 ? 0 : Math.PI;
 }
 
+/** Story locations (mission markers, signs and props are placed from these). */
+export const LANDMARKS = {
+  chaiStall: { x: -30, z: 11.0 },
+  /** Sweet Pinch Bakery: shopfront on the south side of the main road, facing +z. */
+  bakery: { x: 65, z: -12, nx: 0, nz: 1 },
+  /** Sethi family home: doorway on Shakti Nagar Lane, facing the lane (-x). */
+  home: { x: -91.5, z: 18, nx: -1, nz: 0 },
+  /** Where the family car is parked outside home. */
+  homeParking: { x: -96.6, z: 22.5, heading: 0 },
+};
+
+/** Keep random clutter (signs, scooters, parked cars) away from these. */
+export const CLEAR_ZONES = [
+  { x: LANDMARKS.chaiStall.x, z: LANDMARKS.chaiStall.z, r: 8 },
+  { x: LANDMARKS.bakery.x, z: LANDMARKS.bakery.z + 2, r: 7 },
+  { x: LANDMARKS.home.x - 2, z: LANDMARKS.home.z, r: 9 },
+  { x: -41.65, z: 20, r: 7 }, // family car start
+];
+
+export function inClearZone(x: number, z: number, pad = 0): boolean {
+  return CLEAR_ZONES.some((c) => Math.hypot(x - c.x, z - c.z) < c.r + pad);
+}
+
 export const SPAWN = {
   player: { x: -32.5, z: 9.6, facing: Math.PI / 2 },
   bike: { x: -26.5, z: 7.25, heading: -Math.PI / 2 }, // tucked against the kerb, clear of the lane
