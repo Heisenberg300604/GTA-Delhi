@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Noto+Sans+Devanagari:wght@600;800&family=Inter:wght@400;600;800&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #app { width: 100%; height: 100%; overflow: hidden; background: #141b2d; }
+canvas { display: block; }
+
+.loading {
+  position: fixed; inset: 0; display: grid; place-items: center;
+  color: #f2a33a; font: 800 20px Inter, sans-serif; letter-spacing: 0.08em;
+}
+
+.hud { position: fixed; inset: 0; pointer-events: none; font-family: Inter, system-ui, sans-serif; color: #fff; }
+.hud-title {
+  position: absolute; top: 16px; left: 20px; font: 400 26px Anton, Impact, sans-serif; letter-spacing: 0.06em;
+  color: #f2a33a; text-shadow: 0 2px 0 #000a;
+}
+.hud-title span { font: 600 12px Inter, sans-serif; color: #fffc; letter-spacing: 0.04em; text-shadow: 0 1px 2px #000; }
+
+.hud-hisaab {
+  position: absolute; top: 16px; right: 20px; text-align: right;
+  background: linear-gradient(180deg, #b3261ee6, #7d1912e6); padding: 8px 14px; border-radius: 4px;
+  border: 2px solid #f5d3a3; box-shadow: 0 4px 14px #0006; transform: rotate(-1.5deg);
+}
+.hud-hisaab .label { font: 800 11px 'Noto Sans Devanagari', Inter, sans-serif; letter-spacing: 0.12em; color: #f5d3a3; }
+.hud-hisaab .amount { font: 400 28px Anton, Impact, sans-serif; letter-spacing: 0.04em; }
+
+.hud-help {
+  position: absolute; bottom: 14px; left: 20px; font-size: 12px; color: #fffd;
+  background: #0007; padding: 6px 10px; border-radius: 4px;
+}
+.hud-help b { color: #f5c518; }
+
+.hud-prompt {
+  position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: #141b2dd9; border-left: 4px solid #f5c518; padding: 10px 18px; font-weight: 700; font-size: 15px;
+  opacity: 0; transition: opacity 0.15s;
+}
+
+.hud-speedo {
+  position: absolute; bottom: 24px; right: 28px; text-align: right; opacity: 0; transition: opacity 0.2s;
+  text-shadow: 0 2px 6px #000c;
+}
+.hud-speedo .kmh { font: 400 64px Anton, Impact, sans-serif; color: #fff; }
+.hud-speedo .unit { font: 800 14px Inter, sans-serif; color: #f2a33a; margin-left: 6px; }
+.hud-speedo .name { font: 800 11px Inter, sans-serif; letter-spacing: 0.2em; color: #fffb; }
+
+.hud-toast {
+  position: absolute; top: 90px; left: 50%; transform: translateX(-50%);
+  background: #2f7d32e6; padding: 8px 16px; border-radius: 3px; font-weight: 800; letter-spacing: 0.03em;
+  opacity: 0; transition: opacity 0.3s;
+}
+
+.hud-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center, #141b2d99, #141b2df2); pointer-events: auto; cursor: pointer;
+}
+.hud-overlay .card { text-align: center; }
+.hud-overlay .logo { font: 400 110px Anton, Impact, sans-serif; letter-spacing: 0.04em; color: #f2a33a; line-height: 1; text-shadow: 0 6px 0 #b3261e; }
+.hud-overlay .logo-hi { font: 800 34px 'Noto Sans Devanagari', sans-serif; color: #f5d3a3; margin-top: 4px; }
+.hud-overlay .tag { font-style: italic; color: #fffc; margin-top: 18px; font-size: 16px; }
+.hud-overlay .start {
+  display: inline-block; margin-top: 34px; padding: 12px 36px; border: 2px solid #f5c518; color: #f5c518;
+  font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; animation: pulse 1.6s infinite;
+}
+.hud-overlay .small { margin-top: 16px; font-size: 12px; color: #fff8; letter-spacing: 0.1em; }
+@keyframes pulse { 50% { opacity: 0.55; } }
+
+.debug {
+  position: fixed; top: 64px; left: 20px; pointer-events: none;
+  font: 11px/1.45 ui-monospace, Menlo, monospace; color: #b8f5b0; background: #000a; padding: 6px 9px; border-radius: 3px;
+}
+
+.hud-bark {
+  position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity 0.25s;
+  font-weight: 600; font-size: 17px; text-shadow: 0 2px 4px #000, 0 0 2px #000; white-space: nowrap;
+}
+.hud-bark span { color: #f5c518; font-weight: 800; }
