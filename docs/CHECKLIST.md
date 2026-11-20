@@ -20,7 +20,7 @@
 - [x] Pedestrians: 22/40/60 by quality, 11 instanced draw calls total, pavement loops, idle stops, sidestep the player, flee bikes and horns, Hinglish bark subtitles
 - [x] Ambient city audio v1 (traffic rumble bed + random distant horns, denser near the main road)
 - [ ] Recorded ambience (market murmur, vendor calls, chai-stall chatter): needs licensed or own recordings
-- [ ] Simple traffic on lane paths (stop for obstacles, honk, jams) ← pulled forward from Phase 5
+- [x] Traffic: hatchbacks, sedans, autos, DTS buses (8/14/22 by quality, 6 instanced draw calls); keep-left lanes, car-following, junction yielding (then push through), curved turns, honking at the player, despawn/respawn off-screen
 - [ ] More street detail: carts, stalls, auto stand, metro-station entrance, potholes
 - [ ] Chunk streaming scaffold + low-end benchmark route
 - [ ] Test `?q=low` on a low-end laptop
@@ -28,7 +28,7 @@
 ## Phase 3 — Characters & vehicles
 - [ ] Aryan model (Blender/Mixamo) + animation state machine
 - [ ] Bike GLB (Blender script) replacing the greybox
-- [ ] Car (Sitara Pari): raycast vehicle, enter/exit
+- [x] Car (Sitara Pari): arcade handling with handbrake drift, body pitch/roll, steerable wheels, enter/exit (right-hand drive)
 - [ ] Vehicle damage (basic)
 
 ## Phase 4 — First mission

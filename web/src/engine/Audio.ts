@@ -81,17 +81,26 @@ export class AudioSystem {
     this.nextHorn -= dt * (0.4 + busy);
     if (this.nextHorn > 0) return;
     this.nextHorn = 0.6 + Math.random() * 3;
+    this.playHorn(0.015 + Math.random() * 0.04 * (0.5 + busy), Math.random() * 2 - 1, 900 + Math.random() * 1500);
+  }
+
+  /**
+   * One honk (or a "pom-pom" pattern). volume ~0..0.15, pan -1..1,
+   * cutoff in Hz: lower sounds further away.
+   */
+  playHorn(volume: number, pan: number, cutoff: number, base = 330 + Math.random() * 300) {
+    if (!this.ctx || !this.master || volume <= 0.002) return;
     const ctx = this.ctx;
     const t0 = ctx.currentTime;
-    const pan = ctx.createStereoPanner();
-    pan.pan.value = Math.random() * 2 - 1;
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = Math.max(-1, Math.min(1, pan));
     const g = ctx.createGain();
+    g.gain.value = 0;
     const lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = 900 + Math.random() * 1500; // further away = duller
-    const vol = 0.015 + Math.random() * 0.04 * (0.5 + busy);
-    const base = 330 + Math.random() * 300;
-    const pattern = Math.random() < 0.4 ? [0, 0.18] : Math.random() < 0.5 ? [0] : [0, 0.14, 0.28];
+    lp.frequency.value = cutoff;
+    const r = Math.random();
+    const pattern = r < 0.4 ? [0, 0.18] : r < 0.7 ? [0] : [0, 0.14, 0.28];
     const dur = Math.random() < 0.2 ? 0.7 : 0.12;
     for (const off of pattern) {
       for (const f of [base, base * 1.19]) {
@@ -103,15 +112,15 @@ export class AudioSystem {
         o.stop(t0 + off + dur);
       }
       g.gain.setValueAtTime(0, t0 + off);
-      g.gain.linearRampToValueAtTime(vol, t0 + off + 0.01);
-      g.gain.setValueAtTime(vol, t0 + off + dur - 0.02);
+      g.gain.linearRampToValueAtTime(volume, t0 + off + 0.01);
+      g.gain.setValueAtTime(volume, t0 + off + dur - 0.02);
       g.gain.linearRampToValueAtTime(0, t0 + off + dur);
     }
-    lp.connect(g).connect(pan).connect(this.master);
+    lp.connect(g).connect(panner).connect(this.master);
   }
 
   /** riding: whether the engine is running; speed in m/s; throttle -1..1. */
-  setEngine(riding: boolean, speed: number, throttle: number) {
+  setEngine(riding: boolean, speed: number, throttle: number, pitch = 1) {
     if (!this.ctx || !this.engineOsc || !this.engineOsc2 || !this.engineGain) return;
     const t = this.ctx.currentTime;
     // fake 4-speed gearbox: rpm climbs and drops within each gear
@@ -121,7 +130,7 @@ export class AudioSystem {
     while (gear < 4 && s > gearTop[gear]) gear++;
     const lo = gearTop[gear - 1], hi = gearTop[gear];
     const rpm = 0.25 + 0.75 * Math.min(1, (s - lo) / (hi - lo));
-    const base = 38 + rpm * 70 + (throttle > 0 ? 8 : 0);
+    const base = (38 + rpm * 70 + (throttle > 0 ? 8 : 0)) * pitch;
     this.engineOsc.frequency.setTargetAtTime(base, t, 0.05);
     this.engineOsc2.frequency.setTargetAtTime(base * 0.5, t, 0.05);
     const vol = riding ? 0.07 + (throttle > 0 ? 0.06 : 0) + Math.min(s / 23, 1) * 0.05 : 0;

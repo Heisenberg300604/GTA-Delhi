@@ -81,8 +81,27 @@ export function roadPoint(road: Road, t: number, offset: number): { x: number; z
   return road.axis === 'x' ? { x: t, z: road.center + offset } : { x: road.center + offset, z: t };
 }
 
+/** Lane centre distances from the road centre line. India drives on the LEFT. */
+export function laneOffsets(road: Road): number[] {
+  return road.median ? [2.0, 5.6] : [1.6];
+}
+
+/** Signed lateral offset for a lane: travelling in `dir` along the road, keep left. */
+export function laneOffset(road: Road, dir: 1 | -1, lane: number): number {
+  const lanes = laneOffsets(road);
+  const d = lanes[Math.min(lane, lanes.length - 1)];
+  // x-road heading +x has its left on -z; z-road heading +z has its left on +x
+  return (road.axis === 'x' ? -dir : dir) * d;
+}
+
+/** World heading (radians, three.js yaw) of travel along a road. */
+export function roadHeading(road: Road, dir: 1 | -1): number {
+  return road.axis === 'x' ? (dir > 0 ? Math.PI / 2 : -Math.PI / 2) : dir > 0 ? 0 : Math.PI;
+}
+
 export const SPAWN = {
   player: { x: -32.5, z: 9.6, facing: Math.PI / 2 },
-  bike: { x: -26.5, z: 6.3, heading: -Math.PI / 2 },
+  bike: { x: -26.5, z: 7.25, heading: -Math.PI / 2 }, // tucked against the kerb, clear of the lane
+  car: { x: -41.65, z: 20, heading: Math.PI }, // family Sitara Pari, parked on Bazaar Lane
   cameraYaw: -Math.PI / 2,
 };

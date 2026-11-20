@@ -4,6 +4,8 @@ import { Input } from '../engine/Input';
 import { BIKE } from '../config';
 import { clamp, damp, lerp, lerpAngle } from '../utils/math';
 import { BikeModel } from './BikeModel';
+import type { Drivable } from './Drivable';
+import type { CharacterRig } from '../player/CharacterRig';
 
 // A capsule lying along the bike's length. (A flat-bottomed box gets snagged on
 // flat ground by the character controller; rounded shapes slide cleanly.)
@@ -20,7 +22,12 @@ const DOWN = { x: 0, y: -1, z: 0 };
  * collisions with the city without the instability of real two-wheel physics.
  * Steering uses a bicycle model; lean is visual only.
  */
-export class BikeController {
+export class BikeController implements Drivable {
+  readonly name = BIKE.name;
+  readonly kind = 'bike' as const;
+  readonly mountDistance = BIKE.mountDistance;
+  readonly exitMaxSpeed = BIKE.dismountMaxSpeed;
+  readonly halfLength = 1.0;
   readonly body: RAPIER.RigidBody;
   readonly collider: RAPIER.Collider;
   readonly model = new BikeModel();
@@ -77,9 +84,18 @@ export class BikeController {
     return Math.abs(this.speed) * 3.6;
   }
 
-  /** Right-hand side direction (unit, XZ). */
-  right(out = new THREE.Vector3()): THREE.Vector3 {
-    return out.set(-Math.cos(this.heading), 0, Math.sin(this.heading));
+  seat(rig: CharacterRig) {
+    this.model.riderMount.add(rig.root);
+    rig.setPose('ride');
+  }
+
+  unseat(_rig: CharacterRig) {}
+
+  exitPoints(): THREE.Vector3[] {
+    const rx = -Math.cos(this.heading), rz = Math.sin(this.heading);
+    const base = this.model.root.position;
+    const at = (side: number) => new THREE.Vector3(base.x + rx * side, base.y + 0.05, base.z + rz * side);
+    return [at(-1.0), at(1.0)]; // step off on the left, else the right
   }
 
   fixedUpdate(dt: number, input: Input | null) {

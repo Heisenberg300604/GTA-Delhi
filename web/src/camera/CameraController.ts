@@ -6,7 +6,7 @@ import { clamp, damp, dampAngle } from '../utils/math';
 
 export interface CameraTarget {
   position: THREE.Vector3; // ground position of the followed thing
-  mode: 'foot' | 'bike';
+  mode: 'foot' | 'bike' | 'car';
   heading?: number;
   speed?: number;
   shake?: number;
@@ -37,7 +37,8 @@ export class CameraController {
     this.pitch = clamp(this.pitch + input.mouseDY * CAMERA.sensitivity, CAMERA.minPitch, CAMERA.maxPitch);
     this.idle = moved ? 0 : this.idle + dt;
 
-    const onBike = target.mode === 'bike';
+    const onBike = target.mode !== 'foot'; // any vehicle
+    const inCar = target.mode === 'car';
     const speed = Math.abs(target.speed ?? 0);
     if (onBike && target.heading !== undefined && this.idle > CAMERA.autoAlignDelay && speed > 2) {
       const strength = clamp(speed / 10, 0.4, 1) * 2.5;
@@ -45,7 +46,7 @@ export class CameraController {
       this.pitch = damp(this.pitch, 0.16, 1.5, dt);
     }
 
-    const height = onBike ? CAMERA.heightBike : CAMERA.heightFoot;
+    const height = inCar ? CAMERA.heightCar : onBike ? CAMERA.heightBike : CAMERA.heightFoot;
     const goal = new THREE.Vector3(target.position.x, target.position.y + height, target.position.z);
     if (!this.initialised) {
       this.focus.copy(goal);
@@ -56,7 +57,7 @@ export class CameraController {
       this.focus.y = damp(this.focus.y, goal.y, 12, dt);
     }
 
-    const want = (onBike ? CAMERA.distanceBike : CAMERA.distanceFoot) + (onBike ? speed * 0.05 : 0);
+    const want = (inCar ? CAMERA.distanceCar : onBike ? CAMERA.distanceBike : CAMERA.distanceFoot) + (onBike ? speed * 0.05 : 0);
     const cp = Math.cos(this.pitch);
     this.dir.set(Math.sin(this.yaw) * cp, Math.sin(this.pitch), Math.cos(this.yaw) * cp);
 
@@ -76,7 +77,7 @@ export class CameraController {
     }
     this.camera.lookAt(this.focus);
 
-    const fov = CAMERA.fov + (onBike ? clamp(speed / 23, 0, 1) * CAMERA.fovBoost : 0);
+    const fov = CAMERA.fov + (onBike ? clamp(speed / 28, 0, 1) * CAMERA.fovBoost : 0);
     if (Math.abs(this.camera.fov - fov) > 0.01) {
       this.camera.fov = damp(this.camera.fov, fov, 4, dt);
       this.camera.updateProjectionMatrix();

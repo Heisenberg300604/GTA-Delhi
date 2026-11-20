@@ -469,6 +469,7 @@ export class City {
         if (inCrossing(road, t, 6)) continue;
         const side = rng.chance(0.5) ? -1 : 1;
         const p = roadPoint(road, t, side * (half - 1.15));
+        if (Math.hypot(p.x - SPAWN.car.x, p.z - SPAWN.car.z) < 7) continue; // keep the family car's spot free
         const yaw = road.axis === 'x' ? Math.PI / 2 + (rng.chance(0.5) ? 0 : Math.PI) : rng.chance(0.5) ? 0 : Math.PI;
         this.parkedCar(p.x, p.z, yaw);
       }

@@ -25,8 +25,9 @@ await page.waitForTimeout(1500);
 const g = (fn) => page.evaluate(fn);
 const state = () => g(() => {
   const s = window.__game;
-  const p = s.state === 'bike' ? s.bike.position : s.player.position;
-  return { state: s.state, x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2), kmh: +s.bike.kmh.toFixed(1), grounded: s.player.grounded };
+  const v = s.vehicle;
+  const p = v ? v.position : s.player.position;
+  return { state: v ? v.kind : 'foot', kmh: v ? +v.kmh.toFixed(1) : 0, x: +p.x.toFixed(2), y: +p.y.toFixed(2), z: +p.z.toFixed(2), grounded: s.player.grounded };
 });
 const hold = async (key, ms) => { await page.keyboard.down(key); await page.waitForTimeout(ms); await page.keyboard.up(key); };
 
@@ -44,6 +45,19 @@ const pedsB = await pedSample();
 const movedPeds = pedsA.filter((a, i) => Math.hypot(a[0] - pedsB[i][0], a[1] - pedsB[i][1]) > 0.3).length;
 const nearPeds = await g(() => window.__game.crowd.peds.filter((p) => Math.hypot(p.x - window.__game.player.position.x, p.z - window.__game.player.position.z) < 60).length);
 check('pedestrians spawn near the player and walk', nearPeds >= 5 && movedPeds >= 4, { nearPeds, movedPeds });
+
+const carSample = () => g(() => window.__game.traffic.cars.map((c) => [c.x, c.z]));
+const carsA = await carSample();
+await page.waitForTimeout(1000);
+const carsB = await carSample();
+const movingCars = carsA.filter((a, i) => Math.hypot(a[0] - carsB[i][0], a[1] - carsB[i][1]) > 1).length;
+check('traffic drives', movingCars >= Math.ceil(carsA.length * 0.4), { movingCars, total: carsA.length });
+const overlaps = await g(() => {
+  const cs = window.__game.traffic.cars; let n = 0;
+  for (let i = 0; i < cs.length; i++) for (let j = i + 1; j < cs.length; j++) if (Math.hypot(cs[i].x - cs[j].x, cs[i].z - cs[j].z) < 1.5) n++;
+  return n;
+});
+check('traffic vehicles not stacked on each other', overlaps === 0, { overlaps });
 
 await hold('KeyW', 1200);
 const s1 = await state();
@@ -90,7 +104,30 @@ const s8 = await state();
 check('dismounts with F', s8.state === 'foot', s8);
 await page.screenshot({ path: `${out}/04-dismounted.png` });
 
-// ride into a wall at speed: must not tunnel through
+// the family car
+await g(() => { const s = window.__game; const c = s.car.position; s.player.teleport({ x: c.x + 2.2, y: 0.15, z: c.z }, 0); });
+await page.waitForTimeout(300);
+await page.keyboard.press('KeyF');
+await page.waitForTimeout(300);
+const c1 = await state();
+check('enters the car with F', c1.state === 'car', c1);
+await page.keyboard.down('KeyW');
+let peak = 0;
+for (let i = 0; i < 24; i++) { await page.waitForTimeout(100); peak = Math.max(peak, (await state()).kmh); }
+await page.keyboard.up('KeyW');
+check('car accelerates', peak > 35, { peakKmh: peak });
+await page.screenshot({ path: `${out}/06-car.png` });
+await page.keyboard.down('Space'); await hold('KeyA', 700); await page.keyboard.up('Space');
+await hold('KeyS', 900);
+await hold('Space', 1500);
+await page.keyboard.press('KeyF');
+await page.waitForTimeout(300);
+const c3 = await state();
+check('exits the car', c3.state === 'foot', c3);
+
+// back to the bike: ride into a wall at speed, must not tunnel through
+await g(() => { const s = window.__game; const b = s.bike.position; s.player.teleport({ x: b.x + 1.2, y: 0, z: b.z }, 0); });
+await page.waitForTimeout(300);
 await page.keyboard.press('KeyF');
 await g(() => { const s = window.__game; s.cam.yaw = s.bike.heading + Math.PI; });
 await hold('KeyW', 6000);

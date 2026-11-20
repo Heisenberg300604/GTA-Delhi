@@ -19,7 +19,7 @@ export class Hud {
       <div class="hud-title">RING ROAD <span>· Project Dilli · Phase 2 prototype</span></div>
       <div class="hud-hisaab"><div class="label">हिसाब · FAMILY DEBT</div><div class="amount">₹14,00,000</div></div>
       <div class="hud-help">
-        <b>WASD</b> move · <b>Shift</b> run · <b>Space</b> jump / brake · <b>F</b> ride / get off · <b>H</b> horn · <b>Mouse</b> camera · <b>F3</b> stats
+        <b>WASD</b> move · <b>Shift</b> run · <b>Space</b> jump / brake · <b>F</b> enter / exit · <b>H</b> horn · <b>Mouse</b> camera · <b>F3</b> stats
       </div>
       <div class="hud-prompt"></div>
       <div class="hud-speedo"><span class="kmh">0</span><span class="unit">km/h</span><div class="name">VAYU SPARK 125</div></div>
@@ -54,9 +54,10 @@ export class Hud {
     this.prompt.style.opacity = text ? '1' : '0';
   }
 
-  setSpeed(kmh: number | null) {
+  setSpeed(kmh: number | null, name?: string) {
     this.speedo.style.opacity = kmh === null ? '0' : '1';
     if (kmh !== null) this.speedo.querySelector('.kmh')!.textContent = String(Math.round(kmh));
+    if (name) this.speedo.querySelector('.name')!.textContent = name.toUpperCase();
   }
 
   showToast(text: string, seconds = 2.5) {

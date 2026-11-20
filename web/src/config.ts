@@ -39,6 +39,28 @@ export const BIKE = {
   collider: { radius: 0.36, halfLength: 0.62 },
 };
 
+export const CAR = {
+  name: 'Sitara Pari',
+  maxSpeed: 31, // ≈ 112 km/h
+  reverseMax: 7,
+  accel: 7.5,
+  brake: 15,
+  coastDrag: 1.1,
+  airDrag: 0.004,
+  handbrake: 5,
+  wheelbase: 2.4,
+  maxSteerLow: 0.62,
+  maxSteerHigh: 0.11,
+  steerRate: 4.5,
+  grip: 9,
+  driftGrip: 1.3,
+  clearance: 0.22,
+  half: { x: 0.83, y: 0.45, z: 1.85 },
+  mountDistance: 3.4,
+  exitMaxSpeed: 3,
+  color: '#7d1f1f',
+};
+
 export const CAMERA = {
   fov: 62,
   fovBoost: 12,
@@ -46,6 +68,8 @@ export const CAMERA = {
   distanceBike: 5.8,
   heightFoot: 1.55,
   heightBike: 1.45,
+  distanceCar: 7.2,
+  heightCar: 1.9,
   sensitivity: 0.0022,
   minPitch: -0.35,
   maxPitch: 1.2,
@@ -54,9 +78,9 @@ export const CAMERA = {
 
 export const QUALITY_PRESETS: Record<
   Quality,
-  { pixelRatio: number; antialias: boolean; shadows: boolean; shadowMap: number; pedestrians: number }
+  { pixelRatio: number; antialias: boolean; shadows: boolean; shadowMap: number; pedestrians: number; traffic: number }
 > = {
-  low: { pixelRatio: 0.75, antialias: false, shadows: false, shadowMap: 1024, pedestrians: 22 },
-  medium: { pixelRatio: 1, antialias: true, shadows: true, shadowMap: 1024, pedestrians: 40 },
-  high: { pixelRatio: Math.min(window.devicePixelRatio, 2), antialias: true, shadows: true, shadowMap: 2048, pedestrians: 60 },
+  low: { pixelRatio: 0.75, antialias: false, shadows: false, shadowMap: 1024, pedestrians: 22, traffic: 8 },
+  medium: { pixelRatio: 1, antialias: true, shadows: true, shadowMap: 1024, pedestrians: 40, traffic: 14 },
+  high: { pixelRatio: Math.min(window.devicePixelRatio, 2), antialias: true, shadows: true, shadowMap: 2048, pedestrians: 60, traffic: 22 },
 };
