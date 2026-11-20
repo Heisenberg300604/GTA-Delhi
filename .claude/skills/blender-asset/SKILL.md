@@ -12,6 +12,15 @@ Blender binary: `/Applications/Blender.app/Contents/MacOS/Blender`
   `"/Applications/Blender.app/Contents/MacOS/Blender" -b --factory-startup -P tools/blender/<script>.py -- <args>`
 - Scripts live in `tools/blender/`. Source files go in `assets-src/`, exported GLBs in `web/public/assets/<category>/`.
 - `tools/blender/fbx_to_glb.py <in.fbx> <out.glb>`: Mixamo FBX → GLB (keeps skin + animations).
+- `tools/blender/inspect_fbx.py <in.fbx>`: prints armature bones, actions, triangle count, materials.
+- `tools/blender/export_character.py <in.fbx> <palette.png> <out.glb>`: character → game GLB. Short action names,
+  one NLA track per action (so every clip exports), palette texture with nearest filtering.
+  Used for `web/public/assets/characters/human.glb`.
+
+## Character colours
+Characters use a 32×32 palette texture in bands (rows, top-down): skin 0–5, eyes 6–10, hair 11–16,
+shirt 17–22, pants 23–31. `web/src/player/AnimatedCharacter.ts` generates these at runtime (`makePaletteTexture`),
+so new outfits need no new files.
 
 ## Game-ready rules (GDD §18–19, §22)
 - Style: low-poly, flat or vertex colours, at most one 512–1024 px texture (atlas) per asset.

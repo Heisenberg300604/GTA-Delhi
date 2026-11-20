@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { clamp, damp } from '../utils/math';
+import type { CharacterView, Pose } from './CharacterView';
 
 export interface RigLook {
   skin: string;
@@ -20,14 +21,13 @@ export const ARYAN_LOOK: RigLook = {
   shoes: '#ececec',
 };
 
-type Pose = 'ground' | 'air' | 'ride';
 
 /**
  * Blocky placeholder humanoid with procedural animation. It uses the same joint
  * layout as a Mixamo skeleton, so a skinned GLB can replace it in Phase 3
  * without touching the controllers.
  */
-export class CharacterRig {
+export class CharacterRig implements CharacterView {
   readonly root = new THREE.Group();
   private hips = new THREE.Group();
   private torso = new THREE.Group();

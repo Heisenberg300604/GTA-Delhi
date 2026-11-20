@@ -5,7 +5,7 @@ import { CAR } from '../config';
 import { clamp, damp, lerp, lerpAngle } from '../utils/math';
 import { VEHICLE_TYPES } from './vehicleTypes';
 import type { Drivable } from './Drivable';
-import type { CharacterRig } from '../player/CharacterRig';
+import type { CharacterView } from '../player/CharacterView';
 
 const H = CAR.half;
 const GROUND_OFFSET = CAR.clearance + H.y;
@@ -117,13 +117,13 @@ export class CarController implements Drivable {
   get visualPosition() { return this.model.root.position; }
   get kmh() { return Math.abs(this.speed) * 3.6; }
 
-  seat(rig: CharacterRig) {
+  seat(rig: CharacterView) {
     this.model.seat.add(rig.root);
     rig.setPose('ride');
     rig.root.visible = false; // cabin is opaque for now; driver shows once we have glass
   }
 
-  unseat(rig: CharacterRig) {
+  unseat(rig: CharacterView) {
     rig.root.visible = true;
   }
 

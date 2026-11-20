@@ -3,6 +3,7 @@ import { RAPIER, Physics } from '../physics/Physics';
 import { Rng } from '../utils/random';
 import { clamp, damp, dampAngle } from '../utils/math';
 import { computeBlocks, KERB, type Block } from '../world/cityLayout';
+import { AnimatedCharacter, characterTemplateLoaded } from '../player/AnimatedCharacter';
 
 /**
  * Pedestrians walking the pavement loops around each block.
@@ -17,6 +18,8 @@ const LANE_INSET = 2.15; // metres in from the kerb edge
 const DESPAWN = 100;
 const SPAWN_MIN = 35;
 const SPAWN_MAX = 80;
+/** Pedestrians closer than this to the camera may use the full skinned model. */
+const NEAR_LOD = 42;
 
 const SKIN = ['#5c3a24', '#6e4429', '#7a4b2e', '#8d5a3c', '#a8714a', '#c48b5f'];
 const TOPS = ['#ffffff', '#e8e2d0', '#1d3c8f', '#8a1c1c', '#2e7d32', '#f9a825', '#6a1b9a', '#ff7043', '#455a64', '#00897b', '#d81b60', '#90a4ae', '#3e2723'];
@@ -81,10 +84,12 @@ export class Crowd {
   private meshes = new Map<PartName, THREE.InstancedMesh>();
   private template = new Template();
   private barkCooldown = 0;
+  /** Pool of full skinned characters for the nearest pedestrians (level of detail). */
+  private pool: { ch: AnimatedCharacter; ped: Ped | null }[] = [];
   /** Set by the game to show subtitles. */
   onBark?: (text: string) => void;
 
-  constructor(scene: THREE.Scene, private readonly physics: Physics, count: number, near: THREE.Vector3) {
+  constructor(scene: THREE.Scene, private readonly physics: Physics, count: number, near: THREE.Vector3, nearCount = 0) {
     this.loops = computeBlocks().map((b: Block) => {
       const x0 = b.x0 + LANE_INSET, x1 = b.x1 - LANE_INSET, z0 = b.z0 + LANE_INSET, z1 = b.z1 - LANE_INSET;
       return { x0, x1, z0, z1, perimeter: 2 * (x1 - x0 + z1 - z0) };
@@ -107,6 +112,16 @@ export class Crowd {
 
     for (let i = 0; i < count; i++) this.peds.push(this.createPed(near));
     this.writeColors();
+
+    if (characterTemplateLoaded()) {
+      for (let k = 0; k < nearCount; k++) {
+        const ch = new AnimatedCharacter();
+        ch.randomizePhase(k * 0.37);
+        ch.root.visible = false;
+        scene.add(ch.root);
+        this.pool.push({ ch, ped: null });
+      }
+    }
   }
 
   private createPed(near: THREE.Vector3): Ped {
@@ -245,12 +260,19 @@ export class Crowd {
 
   /** Pose every pedestrian and upload instance matrices. */
   render(alpha: number, dt: number, cameraPos: THREE.Vector3) {
+    const assigned = this.assignNearLod(cameraPos);
     const t = this.template;
     let i = 0;
     for (const p of this.peds) {
       const x = p.px + (p.x - p.px) * alpha;
       const z = p.pz + (p.z - p.pz) * alpha;
-      const far = Math.hypot(x - cameraPos.x, z - cameraPos.z) > 140;
+      const lod = assigned.get(p);
+      if (lod) {
+        lod.root.position.set(x, KERB, z);
+        lod.root.rotation.y = p.facing;
+        lod.update(dt, p.speed);
+      }
+      const far = !!lod || Math.hypot(x - cameraPos.x, z - cameraPos.z) > 140;
       p.phase += dt * (p.speed > 0.15 ? 4 + p.speed * 1.4 : 0);
       t.pose(x, KERB, z, p.facing, p.phase, p.speed, p);
       for (const [name, objs] of t.parts) {
@@ -262,6 +284,42 @@ export class Crowd {
       i++;
     }
     for (const m of this.meshes.values()) m.instanceMatrix.needsUpdate = true;
+  }
+
+  /** Give the nearest pedestrians a full skinned body; release the rest back to instanced boxes. */
+  private assignNearLod(cameraPos: THREE.Vector3): Map<Ped, AnimatedCharacter> {
+    const out = new Map<Ped, AnimatedCharacter>();
+    if (this.pool.length === 0) return out;
+    const near = this.peds
+      .map((p) => ({ p, d: Math.hypot(p.x - cameraPos.x, p.z - cameraPos.z) }))
+      .filter((e) => e.d < NEAR_LOD)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, this.pool.length)
+      .map((e) => e.p);
+    const wanted = new Set(near);
+    for (const e of this.pool) {
+      if (e.ped && !wanted.has(e.ped)) {
+        e.ped = null;
+        e.ch.root.visible = false;
+      }
+    }
+    for (const p of near) {
+      let e = this.pool.find((x) => x.ped === p);
+      if (!e) {
+        e = this.pool.find((x) => x.ped === null)!;
+        e.ped = p;
+        e.ch.setPalette({
+          skin: `#${p.colors.head.getHexString()}`,
+          eyes: '#161616',
+          hair: `#${p.colors.hair.getHexString()}`,
+          shirt: `#${p.colors.torso.getHexString()}`,
+          pants: `#${p.colors.upperLeg.getHexString()}`,
+        });
+        e.ch.root.visible = true;
+      }
+      out.set(p, e.ch);
+    }
+    return out;
   }
 
   private writeColors() {

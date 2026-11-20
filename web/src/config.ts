@@ -78,9 +78,9 @@ export const CAMERA = {
 
 export const QUALITY_PRESETS: Record<
   Quality,
-  { pixelRatio: number; antialias: boolean; shadows: boolean; shadowMap: number; pedestrians: number; traffic: number }
+  { pixelRatio: number; antialias: boolean; shadows: boolean; shadowMap: number; pedestrians: number; traffic: number; nearPedestrians: number }
 > = {
-  low: { pixelRatio: 0.75, antialias: false, shadows: false, shadowMap: 1024, pedestrians: 22, traffic: 8 },
-  medium: { pixelRatio: 1, antialias: true, shadows: true, shadowMap: 1024, pedestrians: 40, traffic: 14 },
-  high: { pixelRatio: Math.min(window.devicePixelRatio, 2), antialias: true, shadows: true, shadowMap: 2048, pedestrians: 60, traffic: 22 },
+  low: { pixelRatio: 0.75, antialias: false, shadows: false, shadowMap: 1024, pedestrians: 22, traffic: 8, nearPedestrians: 4 },
+  medium: { pixelRatio: 1, antialias: true, shadows: true, shadowMap: 1024, pedestrians: 40, traffic: 14, nearPedestrians: 8 },
+  high: { pixelRatio: Math.min(window.devicePixelRatio, 2), antialias: true, shadows: true, shadowMap: 2048, pedestrians: 60, traffic: 22, nearPedestrians: 12 },
 };

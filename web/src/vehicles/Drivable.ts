@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { RAPIER } from '../physics/Physics';
 import type { Input } from '../engine/Input';
-import type { CharacterRig } from '../player/CharacterRig';
+import type { CharacterView } from '../player/CharacterView';
 
 /** Anything the player can get into. The game state machine only talks to this. */
 export interface Drivable {
@@ -22,8 +22,8 @@ export interface Drivable {
   readonly halfLength: number;
   fixedUpdate(dt: number, input: Input | null): void;
   render(alpha: number, dt: number): void;
-  seat(rig: CharacterRig): void;
-  unseat(rig: CharacterRig): void;
+  seat(rig: CharacterView): void;
+  unseat(rig: CharacterView): void;
   /** Candidate feet positions to step out to, in order of preference. */
   exitPoints(): THREE.Vector3[];
 }

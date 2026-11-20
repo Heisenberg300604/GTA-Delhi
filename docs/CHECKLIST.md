@@ -26,7 +26,10 @@
 - [ ] Test `?q=low` on a low-end laptop
 
 ## Phase 3 — Characters & vehicles
-- [ ] Aryan model (Blender/Mixamo) + animation state machine
+- [x] Aryan model: CC0 Quaternius human → Blender pipeline → GLB; palette recolouring; Idle/Walk/Run/Jump/Punch blending; procedural riding pose
+- [x] Pedestrian level of detail: nearest 4/8/12 pedestrians use the skinned model with their own outfit colours
+- [ ] Female/kurta/sari variants (needs a second base mesh: Quaternius/Mixamo or Blender-modelled)
+- [ ] Driving and sitting animations (Mixamo: sitting, driving, motorcycle) + car-door enter/exit
 - [ ] Bike GLB (Blender script) replacing the greybox
 - [x] Car (Sitara Pari): arcade handling with handbrake drift, body pitch/roll, steerable wheels, enter/exit (right-hand drive)
 - [ ] Vehicle damage (basic)

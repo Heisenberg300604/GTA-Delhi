@@ -21,6 +21,9 @@ export class Input {
     document.addEventListener('pointerlockchange', () => {
       this.pointerLocked = document.pointerLockElement === this.target;
     });
+    document.addEventListener('mousedown', (e) => {
+      if (this.pointerLocked) this.latched.add(`Mouse${e.button}`);
+    });
     document.addEventListener('mousemove', (e) => {
       if (!this.pointerLocked) return;
       this.mouseDX += e.movementX;

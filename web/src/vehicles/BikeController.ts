@@ -5,7 +5,7 @@ import { BIKE } from '../config';
 import { clamp, damp, lerp, lerpAngle } from '../utils/math';
 import { BikeModel } from './BikeModel';
 import type { Drivable } from './Drivable';
-import type { CharacterRig } from '../player/CharacterRig';
+import type { CharacterView } from '../player/CharacterView';
 
 // A capsule lying along the bike's length. (A flat-bottomed box gets snagged on
 // flat ground by the character controller; rounded shapes slide cleanly.)
@@ -84,12 +84,12 @@ export class BikeController implements Drivable {
     return Math.abs(this.speed) * 3.6;
   }
 
-  seat(rig: CharacterRig) {
+  seat(rig: CharacterView) {
     this.model.riderMount.add(rig.root);
     rig.setPose('ride');
   }
 
-  unseat(_rig: CharacterRig) {}
+  unseat(_rig: CharacterView) {}
 
   exitPoints(): THREE.Vector3[] {
     const rx = -Math.cos(this.heading), rz = Math.sin(this.heading);

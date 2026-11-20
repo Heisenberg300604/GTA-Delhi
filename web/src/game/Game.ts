@@ -17,6 +17,7 @@ import { QUALITY_PRESETS } from '../config';
 import { Crowd } from '../ai/Crowd';
 import { Traffic, type Obstacle } from '../ai/Traffic';
 import { clamp } from '../utils/math';
+import { AnimatedCharacter, loadCharacterTemplate } from '../player/AnimatedCharacter';
 
 /** Wires the systems together and owns the on-foot ↔ vehicle state machine. */
 export class Game implements GameLoop {
@@ -37,19 +38,22 @@ export class Game implements GameLoop {
   private lastImpact = 0;
   private obstacles: Obstacle[] = [];
 
-  private constructor(private readonly engine: Engine, private readonly physics: Physics, ui: HTMLElement) {
+  private constructor(private readonly engine: Engine, private readonly physics: Physics, ui: HTMLElement, hasModel: boolean) {
     const scene = engine.scene;
     const preset = QUALITY_PRESETS[engine.quality];
     this.input = new Input(engine.canvas);
     this.env = new Environment(scene, engine.renderer, engine.quality);
     new City(scene, physics);
 
-    this.player = new PlayerController(scene, physics, new THREE.Vector3(SPAWN.player.x, KERB, SPAWN.player.z), SPAWN.player.facing);
+    this.player = new PlayerController(
+      scene, physics, new THREE.Vector3(SPAWN.player.x, KERB, SPAWN.player.z), SPAWN.player.facing,
+      hasModel ? new AnimatedCharacter() : undefined,
+    );
     this.bike = new BikeController(scene, physics, new THREE.Vector3(SPAWN.bike.x, 0, SPAWN.bike.z), SPAWN.bike.heading);
     this.car = new CarController(scene, physics, new THREE.Vector3(SPAWN.car.x, 0, SPAWN.car.z), SPAWN.car.heading);
     this.vehicles = [this.bike, this.car];
     this.cam = new CameraController(engine.camera, physics, SPAWN.cameraYaw, () => []);
-    this.crowd = new Crowd(scene, physics, preset.pedestrians, this.player.position);
+    this.crowd = new Crowd(scene, physics, preset.pedestrians, this.player.position, preset.nearPedestrians);
     this.traffic = new Traffic(scene, physics, preset.traffic, this.player.position);
 
     this.hud = new Hud(ui, () => this.start());
@@ -63,8 +67,11 @@ export class Game implements GameLoop {
   }
 
   static async create(engine: Engine, ui: HTMLElement): Promise<Game> {
-    const physics = await Physics.create();
-    return new Game(engine, physics, ui);
+    const [physics, hasModel] = await Promise.all([
+      Physics.create(),
+      loadCharacterTemplate(`${import.meta.env.BASE_URL}assets/characters/human.glb`),
+    ]);
+    return new Game(engine, physics, ui, hasModel);
   }
 
   private start() {
@@ -87,6 +94,7 @@ export class Game implements GameLoop {
         if (v) this.enter(v);
       }
     }
+    if (!this.vehicle && this.input.consume('Mouse0')) this.player.rig.punch?.();
     this.player.fixedUpdate(dt, this.input, this.cam.yaw);
     for (const v of this.vehicles) v.fixedUpdate(dt, v === this.vehicle ? this.input : null);
 

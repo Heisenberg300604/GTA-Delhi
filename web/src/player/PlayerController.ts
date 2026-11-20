@@ -4,6 +4,7 @@ import { Input } from '../engine/Input';
 import { PLAYER } from '../config';
 import { dampAngle, damp } from '../utils/math';
 import { CharacterRig } from './CharacterRig';
+import type { CharacterView } from './CharacterView';
 
 const CAPSULE_CENTER = PLAYER.halfHeight + PLAYER.radius; // feet → capsule centre
 
@@ -11,7 +12,7 @@ const CAPSULE_CENTER = PLAYER.halfHeight + PLAYER.radius; // feet → capsule ce
 export class PlayerController {
   readonly body: RAPIER.RigidBody;
   readonly collider: RAPIER.Collider;
-  readonly rig = new CharacterRig();
+  readonly rig: CharacterView;
   /** Visual root (feet position), interpolated between physics ticks. */
   readonly root = new THREE.Group();
 
@@ -26,7 +27,8 @@ export class PlayerController {
   private curr = new THREE.Vector3();
   private wish = new THREE.Vector3();
 
-  constructor(scene: THREE.Scene, physics: Physics, spawn: THREE.Vector3, facing: number) {
+  constructor(scene: THREE.Scene, physics: Physics, spawn: THREE.Vector3, facing: number, rig: CharacterView = new CharacterRig()) {
+    this.rig = rig;
     const world = physics.world;
     this.body = world.createRigidBody(
       RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(spawn.x, spawn.y + CAPSULE_CENTER, spawn.z),

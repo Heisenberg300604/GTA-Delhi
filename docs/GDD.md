@@ -1132,3 +1132,5 @@ Cutscenes are essential to the San Andreas-style story feel, so they get a prope
 | 2026-11-21 | 1 | Phase 1 complete: procedural Kamla Nagar slice, player, camera, Vayu Spark bike, synth audio, HUD, smoke test (11/11). 60 fps, 117 draw calls on M4 (high). |
 | 2026-11-21 | 1 | Bike physics fix: Rapier's character controller snags a box (and a horizontal capsule) on flat ground, so the bike collider floats 17 cm up and height comes from a ground ray. Kerb hopping works for free. |
 | 2026-11-21 | 2 | Pedestrians (instanced, 11 draw calls for up to 60 people), ambient horns, bark subtitles. 139 draw calls (high) / 76 (low). |
+| 2026-11-21 | 2 | Traffic AI (cars, autos, DTS buses), drivable Sitara Pari with handbrake drift. |
+| 2026-11-21 | 3 | Aryan becomes a real animated model (CC0 Quaternius base via the Blender pipeline, palette-recoloured). Nearest pedestrians use the same model (level of detail). 139 draw calls high / 66 low, 17/17 smoke checks. |
