@@ -19,7 +19,7 @@ Ride a delivery bike through Kamla Nagar traffic, talk your way past a police na
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![WebGL](https://img.shields.io/badge/WebGL-990000?style=flat-square&logo=webgl&logoColor=white)
 ![Blender](https://img.shields.io/badge/Blender-asset%20pipeline-E87D0D?style=flat-square&logo=blender&logoColor=white)
-![Playwright](https://img.shields.io/badge/Playwright-headless%20tests-2EAD33?style=flat-square&logo=playwright&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-headless%20tests-2EAD33?style=flat-square&logo=googlechrome&logoColor=white)
 
 [**Play locally**](#-getting-started) · [**Screenshots**](#-screenshots) · [**Features**](#-features) · [**Controls**](#-controls) · [**Architecture**](#-architecture) · [**Roadmap**](#-roadmap) · [**Design doc**](docs/GDD.md)
 
