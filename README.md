@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/media/banner.jpg" alt="RING ROAD: an open-world Delhi story" width="100%">
+<img src="docs/media/banner.jpg" alt="GTA Delhi: an open-world Delhi story" width="100%">
 
 <br>
 
@@ -29,7 +29,7 @@ Ride a delivery bike through Kamla Nagar traffic, talk your way past a police na
 
 ## 🛺 About
 
-**RING ROAD** (codename *Project Dilli*) is a story-driven open-world game set in a stylised, compressed North Delhi: Kamla Nagar's markets, the lanes of Shakti Nagar, the Ring Road, and the prayer-flag colony of Majnu Ka Tila.
+**GTA Delhi** (codename *Project Dilli*) is a story-driven open-world game set in a stylised, compressed North Delhi: Kamla Nagar's markets, the lanes of Shakti Nagar, the Ring Road, and the prayer-flag colony of Majnu Ka Tila.
 
 You play **Aryan Sethi**, a 23-year-old delivery rider who knows every shortcut in the north of the city. On his little sister's birthday, men from *the Kothi* arrive at the family's door with a ledger: **₹14,00,000** owed. Paying it back pulls Aryan into the city's paper trail of favours, loans and quiet threats, and eventually forces him to decide who he really owes.
 
@@ -300,13 +300,13 @@ Logo, banner, city, vehicles, story and code are original to this project.
 
 ## 📄 Licence and disclaimer
 
-© 2026 the RING ROAD authors. All rights reserved. No open-source licence has been chosen yet.
+© 2026 the GTA Delhi authors. All rights reserved. No open-source licence has been chosen yet.
 
-RING ROAD is an independent, original work of fiction. It is **not affiliated with, endorsed by or derived from** Rockstar Games, Take-Two Interactive or the *Grand Theft Auto* series. Real Delhi neighbourhoods appear only as inspiration for invented locations. Any resemblance to real persons or businesses is coincidental.
+GTA Delhi is an independent, unofficial fan-made project and an original work of fiction. It is **not affiliated with, endorsed by or derived from** Rockstar Games, Take-Two Interactive or the *Grand Theft Auto* series. "Grand Theft Auto" and "GTA" are trademarks of Take-Two Interactive Software, Inc. No Rockstar code, art, logos, characters, music or maps are used. Real Delhi neighbourhoods appear only as inspiration for invented locations. Any resemblance to real persons or businesses is coincidental.
 
 <div align="center">
 <br>
-<img src="docs/media/logo.png" alt="RING ROAD emblem" width="96">
+<img src="docs/media/logo.png" alt="GTA Delhi emblem" width="96">
 <br>
 <sub>Made with ☕ cutting chai and a lot of honking.</sub>
 </div>

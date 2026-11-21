@@ -109,7 +109,7 @@ Claude will prepare a script (list of lines) when we reach voice work. Nothing i
   - **Cons:** real streets are irregular (harder to build and drive), and the data licence (ODbL) requires showing "© OpenStreetMap contributors" in the game credits; our derived map data must also stay under ODbL.
   - **Claude's suggestion:** keep the grid for the first missions and use OSM from Phase 6, when we build Old Delhi, Connaught Place and Hauz Khas.
 - [ ] **Profanity default** for dialogue: Off / Mild / Full (GDD §26). Suggestion: default Mild, with Full as an option.
-- [ ] **Final game title.** Working title: RING ROAD.
+- [x] **Final game title:** GTA Delhi (decided 2026-11-21).
 
 ---
 

@@ -1,6 +1,6 @@
-# RING ROAD — Game Design Document
+# GTA Delhi — Game Design Document
 
-**Codename:** GTA DELHI
+**Title:** GTA Delhi (decided by the owner, 2026-11-21) · **Codename:** Project Dilli
 **Version:** 0.1 (Phase 0 — Design)
 **Date:** 2026-11-21
 **Status:** Draft for review. No code written yet.
@@ -17,7 +17,7 @@
 
 | Area | Decision |
 |---|---|
-| Title | **RING ROAD** (codename stays *Project Dilli*). Do **not** use "GTA Delhi" or "GTF Delhi". |
+| Title | **GTA Delhi** (owner's decision; my original recommendation was RING ROAD, see §2). Codename *Project Dilli*. |
 | Theme | *Hisaab* (accounts owed): money, loyalty, love. Aryan's arc moves from *managing* things to *deciding* them. |
 | Core verb | Driving and riding through dense traffic. Combat is rare, short and mostly melee. |
 | Starting district | **North Campus, Kamla Nagar and Majnu Ka Tila** (one compact "North Delhi pocket"). |
@@ -30,7 +30,7 @@
 
 **Where I disagreed with the brief, and why:**
 
-1. **"GTA Delhi" / "GTF Delhi" as a name.** Rockstar's trademark makes it legally risky, and it tells players "knock-off" before they've played a second. The game's personality is Delhi, so the name should be too.
+1. **"GTA Delhi" / "GTF Delhi" as a name.** Rockstar's trademark makes it legally risky, and it tells players "knock-off" before they've played a second. The game's personality is Delhi, so the name should be too. *Update 2026-11-21: the owner chose GTA Delhi anyway. Everything else stays original and the README carries a non-affiliation disclaimer.*
 2. **React Three Fiber and Drei.** They're excellent for interactive scenes, but an open world with chunk streaming, object pools, a fixed-timestep physics loop and hundreds of instanced objects is easier to control with an imperative engine. React stays for the HUD, phone, dialogue and menus. See §21.
 3. **Fifteen districts.** That is several years of work for a large studio. The 10-mission campaign needs four *pocket* districts and a connector road. The rest go on a post-campaign expansion list.
 4. **Gunplay.** *Updated after your direction:* weapons **are in scope**: fists/melee, knife, pistol and one AK-47. They're expensive (aiming, hit reactions, enemy AI, animation), so they arrive in stages: melee and knife in Phase 5, pistol in Phase 5–6, the AK-47 in Phase 6 for late-story set pieces. Driving stays the core verb. See §28.
@@ -83,7 +83,9 @@ A grounded urban crime drama with the dry, affectionate comedy of Delhi street l
 
 ## 2. Title & Branding
 
-### 2.1 Recommended title: **RING ROAD**
+> **Decision (2026-11-21):** the title is **GTA Delhi**, the owner's choice. The analysis below is kept for reference. The logo keeps our own emblem, colours and Anton wordmark, and never imitates Rockstar's logo or typeface.
+
+### 2.1 Original recommendation: **RING ROAD**
 
 - Delhi's Ring Road links every district we build. The finale happens on it.
 - It's a metaphor for the story: debts come back around, fathers' choices repeat in sons, and the story ends where it started (the chai stall).
@@ -1033,7 +1035,7 @@ web/src/
 | Safari WebGL quirks | Test every phase |
 | Audio autoplay blocked by browsers | Start audio only on "Click to play" |
 | Asset licensing | `docs/ASSETS.md` log with source and licence for every file |
-| Trademark or IP exposure | Original names only. No GTA marks, real brands, real colleges or real people. |
+| Trademark or IP exposure | The title uses "GTA" by the owner's choice (a known risk for any public release or monetisation). Everything else is original: no Rockstar logos, real brands, real colleges or real people. README carries a non-affiliation disclaimer. |
 | Sensitive content | No real communities as gangs; abstract crime; respectful depiction of Majnu Ka Tila and Old Delhi |
 | Hindi text rendering | Noto Sans Devanagari, signs drawn to canvas |
 | Save corruption across versions | Versioned save schema with migrations |

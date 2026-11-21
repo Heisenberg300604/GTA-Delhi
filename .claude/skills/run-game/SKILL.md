@@ -1,6 +1,6 @@
 ---
 name: run-game
-description: Launch the RING ROAD web game, run the headless gameplay smoke test, and review screenshots. Use after any gameplay, world or rendering change, or when asked to run/test/screenshot the game.
+description: Launch the GTA Delhi web game, run the headless gameplay smoke test, and review screenshots. Use after any gameplay, world or rendering change, or when asked to run/test/screenshot the game.
 ---
 
 # Run & verify the game

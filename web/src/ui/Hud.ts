@@ -18,7 +18,7 @@ export class Hud {
     this.root = document.createElement('div');
     this.root.className = 'hud';
     this.root.innerHTML = `
-      <div class="hud-title">RING ROAD <span>· Project Dilli · Phase 5 · Missions 1–2</span></div>
+      <div class="hud-title">GTA DELHI <span>· Project Dilli · Phase 5 · Missions 1–2</span></div>
       <div class="hud-hisaab hidden"><div class="label">हिसाब · FAMILY DEBT</div><div class="amount">₹14,00,000</div></div>
       <div class="hud-wallet">₹1,200</div>
       <div class="hud-objective"></div>
@@ -36,8 +36,8 @@ export class Hud {
       <div class="hud-bark"></div>
       <div class="hud-overlay">
         <div class="card">
-          <div class="logo">RING ROAD</div>
-          <div class="logo-hi">रिंग रोड</div>
+          <div class="logo">GTA DELHI</div>
+          <div class="logo-hi">जीटीए दिल्ली</div>
           <div class="tag">Har raasta kisi hisaab pe khatam hota hai.</div>
           <div class="start">Click to play</div>
           <div class="small">Kamla Nagar, North Delhi · golden hour</div>

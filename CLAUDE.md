@@ -1,9 +1,9 @@
-# Project Dilli — "RING ROAD"
+# GTA Delhi (codename Project Dilli)
 
 An original, Delhi-inspired open-world browser game. **Source of truth: [docs/GDD.md](docs/GDD.md).** Progress: [docs/CHECKLIST.md](docs/CHECKLIST.md). The user's own to-do list: [docs/YOUR_TASKS.md](docs/YOUR_TASKS.md).
 
 ## Rules
-- Everything is original: no GTA names, logos, characters, missions, maps, music or code. No real brands, colleges, gangs or people. The title in-game is RING ROAD (codename Project Dilli).
+- The game's title is **GTA Delhi** (the user's decision, 2026-11-21). Everything else is original: no Rockstar logos or logo/font style, characters, missions, maps, music or code. No real brands, colleges, gangs or people. Keep the non-affiliation disclaimer in README.md.
 - Work phase by phase (GDD §23). Never break a working feature; run the smoke test after changes.
 - Keep game logic out of React/UI. The engine never imports UI code; UI is updated through small methods/stores.
 - Small modules, one responsibility each. Tuning values live in `web/src/config.ts`.

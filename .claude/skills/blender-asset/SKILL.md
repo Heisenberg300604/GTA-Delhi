@@ -1,6 +1,6 @@
 ---
 name: blender-asset
-description: Create, convert or optimise 3D assets for RING ROAD with headless Blender (5.3 at /Applications/Blender.app). Use for generating low-poly vehicles/props from Python, converting Mixamo FBX characters/animations to GLB, and exporting game-ready GLBs.
+description: Create, convert or optimise 3D assets for GTA Delhi with headless Blender (5.3 at /Applications/Blender.app). Use for generating low-poly vehicles/props from Python, converting Mixamo FBX characters/animations to GLB, and exporting game-ready GLBs.
 ---
 
 # Blender asset pipeline (headless)
