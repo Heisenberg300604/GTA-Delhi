@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- RING ROAD emblem: a golden-hour skyline inside a ring road. Original artwork for Project Dilli. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b2340"/>
+      <stop offset="0.55" stop-color="#7a3b4a"/>
+      <stop offset="1" stop-color="#f2a33a"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff1c9"/>
+      <stop offset="0.6" stop-color="#ffc861"/>
+      <stop offset="1" stop-color="#f2a33a"/>
+    </radialGradient>
+    <clipPath id="inner"><circle cx="256" cy="256" r="166"/></clipPath>
+  </defs>
+
+  <!-- outer badge -->
+  <circle cx="256" cy="256" r="250" fill="#b3261e"/>
+  <circle cx="256" cy="256" r="238" fill="#f2a33a"/>
+  <!-- the ring road: asphalt band with kerbs and a dashed centre line -->
+  <circle cx="256" cy="256" r="222" fill="#2a2d33"/>
+  <circle cx="256" cy="256" r="222" fill="none" stroke="#e8e1d3" stroke-width="5"/>
+  <circle cx="256" cy="256" r="172" fill="none" stroke="#e8e1d3" stroke-width="5"/>
+  <circle cx="256" cy="256" r="197" fill="none" stroke="#f5c518" stroke-width="5" stroke-dasharray="22 16"/>
+
+  <!-- golden-hour scene -->
+  <g clip-path="url(#inner)">
+    <rect x="80" y="80" width="352" height="352" fill="url(#sky)"/>
+    <circle cx="256" cy="292" r="70" fill="url(#sun)"/>
+    <!-- rooftops, water tanks and a wire -->
+    <g fill="#141b2d">
+      <rect x="86" y="268" width="56" height="170"/>
+      <rect x="96" y="252" width="18" height="16"/>
+      <rect x="138" y="300" width="48" height="140"/>
+      <rect x="182" y="242" width="40" height="200"/>
+      <rect x="190" y="226" width="14" height="16"/>
+      <rect x="218" y="318" width="76" height="120"/>
+      <rect x="290" y="258" width="44" height="180"/>
+      <rect x="312" y="240" width="16" height="18"/>
+      <rect x="330" y="290" width="52" height="150"/>
+      <rect x="378" y="264" width="54" height="176"/>
+      <rect x="244" y="290" width="4" height="30"/>
+    </g>
+    <path d="M80 236 Q 170 262 256 246 T 432 252" fill="none" stroke="#141b2d" stroke-width="3"/>
+    <!-- lit windows -->
+    <g fill="#ffc861">
+      <rect x="100" y="290" width="10" height="12"/><rect x="120" y="318" width="10" height="12"/>
+      <rect x="194" y="266" width="9" height="12"/><rect x="306" y="282" width="9" height="12"/>
+      <rect x="344" y="310" width="10" height="12"/><rect x="394" y="290" width="10" height="12"/>
+      <rect x="236" y="340" width="10" height="12"/><rect x="266" y="340" width="10" height="12"/>
+    </g>
+    <!-- the road at the bottom -->
+    <rect x="80" y="372" width="352" height="70" fill="#2a2d33"/>
+    <rect x="80" y="370" width="352" height="5" fill="#f5c518"/>
+    <g fill="#e8e1d3"><rect x="104" y="402" width="40" height="6"/><rect x="176" y="402" width="40" height="6"/><rect x="248" y="402" width="40" height="6"/><rect x="320" y="402" width="40" height="6"/><rect x="392" y="402" width="40" height="6"/></g>
+  </g>
+  <circle cx="256" cy="256" r="166" fill="none" stroke="#141b2d" stroke-width="6"/>
+</svg>

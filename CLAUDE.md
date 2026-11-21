@@ -19,6 +19,7 @@ An original, Delhi-inspired open-world browser game. **Source of truth: [docs/GD
   - `src/save`: versioned localStorage save
   - `scripts/smoke.mjs`: headless gameplay test · `scripts/mission-mXX.mjs`: full mission playthroughs (both use installed Chrome via playwright-core)
 - `tools/blender/`: headless Blender Python scripts for asset generation/conversion
+- `tools/branding/`: logo/banner source (`brand.html`, `emblem.svg`); `node tools/branding/render.mjs` writes `docs/media/`
 - `assets-src/`: source files (FBX/.blend); exported GLBs go to `web/public/assets/`
 
 ## Commands (run in `web/`)
